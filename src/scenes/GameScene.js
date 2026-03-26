@@ -1,0 +1,697 @@
+import Phaser from 'phaser';
+
+// Bug definitions
+const BUG_TYPES = {
+  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 1.0, name: '개미' },
+  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 1.0, name: '딱정벌레' },
+  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 1.0, name: '모기' },
+  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 1.0, name: '벌' },
+  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 1.8, name: '거미' },
+};
+
+// Wave configurations
+function getWaveConfig(waveNum) {
+  const isBoss = waveNum % 5 === 0;
+  const bugCount = Math.min(5 + Math.floor(waveNum * 1.5), 30);
+  const types = [];
+
+  if (waveNum <= 5) {
+    types.push('ant');
+  } else if (waveNum <= 10) {
+    types.push('ant', 'beetle');
+  } else if (waveNum <= 15) {
+    types.push('ant', 'beetle', 'mosquito');
+  } else {
+    types.push('ant', 'beetle', 'mosquito', 'bee');
+  }
+
+  return { types, bugCount, isBoss };
+}
+
+// Fortification definitions
+const FORT_TYPES = {
+  wall: { texture: 'fort_wall', cost: 50, hp: 5, name: 'Stone Wall', color: 0x888888 },
+  fire: { texture: 'fort_fire', cost: 100, hp: 999, name: 'Fire Trap', color: 0xff4400, damage: 1, interval: 1000 },
+  ice:  { texture: 'fort_ice',  cost: 75, hp: 999, name: 'Ice Wall', color: 0x88ccff, slowFactor: 0.4, duration: 3000 },
+};
+
+export default class GameScene extends Phaser.Scene {
+  constructor() {
+    super('GameScene');
+  }
+
+  init(data) {
+    this.charKey = data.character || 'polar';
+  }
+
+  create() {
+    this.W = 720;
+    this.H = 1280;
+
+    // Game state
+    this.playerHP = 10;
+    this.maxHP = 10;
+    this.score = 0;
+    this.resources = 100; // start with some resources
+    this.wave = 0;
+    this.currentLane = 2; // 0-4, start middle
+    this.throwCooldown = 0;
+    this.throwCooldownMax = 300; // ms
+    this.gameOver = false;
+    this.waveActive = false;
+    this.bugsRemaining = 0;
+    this.totalBugsKilled = 0;
+
+    // Lane positions (Y coordinates) - 5 lanes
+    this.laneCount = 5;
+    this.laneTopY = 180;
+    this.laneHeight = 160;
+    this.laneYPositions = [];
+    for (let i = 0; i < this.laneCount; i++) {
+      this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
+    }
+
+    // Character X position (right side)
+    this.playerX = this.W - 100;
+
+    // Groups
+    this.bugs = [];
+    this.stones = [];
+    this.fortifications = []; // { lane, type, sprite, hp, ... }
+
+    // Draw background
+    this.drawBackground();
+
+    // Character sprite
+    this.player = this.add.sprite(this.playerX, this.laneYPositions[this.currentLane], `${this.charKey}_idle_0`);
+    this.player.setScale(0.8);
+    this.player.setFlipX(true); // face left
+    this.player.play(`${this.charKey}_idle`);
+
+    // UI
+    this.createUI();
+
+    // Controls
+    this.setupControls();
+
+    // Start first wave after delay
+    this.time.delayedCall(1500, () => this.startNextWave());
+
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+  }
+
+  drawBackground() {
+    const bg = this.add.graphics();
+    // Sky/ground gradient
+    bg.fillGradientStyle(0x1a3a1a, 0x1a3a1a, 0x2d5a2d, 0x2d5a2d, 1);
+    bg.fillRect(0, 0, this.W, this.H);
+
+    // Lane backgrounds
+    for (let i = 0; i < this.laneCount; i++) {
+      const y = this.laneTopY + i * this.laneHeight;
+      const color = i % 2 === 0 ? 0x3a6b3a : 0x2d5a2d;
+      bg.fillStyle(color, 0.6);
+      bg.fillRect(0, y, this.W, this.laneHeight);
+
+      // Lane border
+      bg.lineStyle(1, 0x4a8a4a, 0.3);
+      bg.lineBetween(0, y, this.W, y);
+
+      // Path/road texture
+      bg.fillStyle(0x4a7a4a, 0.3);
+      bg.fillRect(0, y + this.laneHeight / 2 - 20, this.W, 40);
+    }
+    // Bottom lane border
+    bg.lineStyle(1, 0x4a8a4a, 0.3);
+    bg.lineBetween(0, this.laneTopY + this.laneCount * this.laneHeight, this.W, this.laneTopY + this.laneCount * this.laneHeight);
+
+    // Right side defense zone
+    bg.fillStyle(0x2a4a6a, 0.3);
+    bg.fillRect(this.W - 140, this.laneTopY, 140, this.laneCount * this.laneHeight);
+    bg.lineStyle(2, 0x4a8aaa, 0.4);
+    bg.lineBetween(this.W - 140, this.laneTopY, this.W - 140, this.laneTopY + this.laneCount * this.laneHeight);
+  }
+
+  createUI() {
+    // Top bar background
+    const topBar = this.add.graphics();
+    topBar.fillStyle(0x111111, 0.85);
+    topBar.fillRoundedRect(10, 10, this.W - 20, 60, 10);
+
+    // Wave
+    this.waveText = this.add.text(30, 25, 'Wave: 0', {
+      fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold',
+    });
+
+    // Score
+    this.scoreText = this.add.text(200, 25, 'Score: 0', {
+      fontSize: '22px', fontFamily: 'Arial', color: '#FFD700', fontStyle: 'bold',
+    });
+
+    // Resources
+    this.resourceText = this.add.text(380, 25, '$ 100', {
+      fontSize: '22px', fontFamily: 'Arial', color: '#4ade80', fontStyle: 'bold',
+    });
+
+    // HP
+    this.hpText = this.add.text(530, 25, 'HP: 10/10', {
+      fontSize: '22px', fontFamily: 'Arial', color: '#ff6666', fontStyle: 'bold',
+    });
+
+    // HP Bar
+    this.hpBarBg = this.add.graphics();
+    this.hpBarBg.fillStyle(0x333333, 1);
+    this.hpBarBg.fillRoundedRect(10, 76, this.W - 20, 16, 4);
+
+    this.hpBar = this.add.graphics();
+    this.updateHPBar();
+
+    // Status text (wave announcements)
+    this.statusText = this.add.text(this.W / 2, 130, '', {
+      fontSize: '30px', fontFamily: 'Arial', color: '#FFD700',
+      fontStyle: 'bold', stroke: '#000', strokeThickness: 4,
+    }).setOrigin(0.5).setAlpha(0);
+
+    // Bottom bar - build buttons
+    this.createBuildButtons();
+
+    // Mobile controls
+    this.createMobileControls();
+  }
+
+  createBuildButtons() {
+    const btnY = this.H - 180;
+    const btnW = 200;
+    const btnH = 60;
+    const gap = 15;
+    const startX = (this.W - (3 * btnW + 2 * gap)) / 2;
+
+    const buttons = [
+      { key: 'wall', label: 'Stone Wall', sublabel: '$50', color: 0x666666, hotkey: '1' },
+      { key: 'fire', label: 'Fire Trap', sublabel: '$100', color: 0xff4400, hotkey: '2' },
+      { key: 'ice', label: 'Ice Wall', sublabel: '$75', color: 0x66aadd, hotkey: '3' },
+    ];
+
+    // Build panel bg
+    const panelBg = this.add.graphics();
+    panelBg.fillStyle(0x111111, 0.85);
+    panelBg.fillRoundedRect(10, btnY - 30, this.W - 20, 100, 10);
+
+    this.add.text(this.W / 2, btnY - 15, '-- 건설 (1/2/3) --', {
+      fontSize: '16px', fontFamily: 'Arial', color: '#aaaaaa',
+    }).setOrigin(0.5);
+
+    buttons.forEach((btn, i) => {
+      const x = startX + i * (btnW + gap);
+      const g = this.add.graphics();
+      g.fillStyle(btn.color, 0.8);
+      g.fillRoundedRect(x, btnY + 5, btnW, btnH, 10);
+      g.lineStyle(2, 0xffffff, 0.3);
+      g.strokeRoundedRect(x, btnY + 5, btnW, btnH, 10);
+
+      this.add.text(x + btnW / 2, btnY + 22, `[${btn.hotkey}] ${btn.label}`, {
+        fontSize: '14px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold',
+      }).setOrigin(0.5);
+
+      this.add.text(x + btnW / 2, btnY + 42, btn.sublabel, {
+        fontSize: '16px', fontFamily: 'Arial', color: '#FFD700',
+      }).setOrigin(0.5);
+
+      const zone = this.add.zone(x + btnW / 2, btnY + 35, btnW, btnH).setInteractive();
+      zone.on('pointerdown', () => this.buildFortification(btn.key));
+    });
+  }
+
+  createMobileControls() {
+    const ctrlY = this.H - 80;
+
+    // Up button
+    const upG = this.add.graphics();
+    upG.fillStyle(0x4a8a4a, 0.8);
+    upG.fillRoundedRect(30, ctrlY - 30, 80, 55, 10);
+    this.add.text(70, ctrlY, '▲', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
+    this.add.zone(70, ctrlY, 80, 55).setInteractive().on('pointerdown', () => this.moveLane(-1));
+
+    // Down button
+    const downG = this.add.graphics();
+    downG.fillStyle(0x4a8a4a, 0.8);
+    downG.fillRoundedRect(130, ctrlY - 30, 80, 55, 10);
+    this.add.text(170, ctrlY, '▼', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
+    this.add.zone(170, ctrlY, 80, 55).setInteractive().on('pointerdown', () => this.moveLane(1));
+
+    // Throw button
+    const throwG = this.add.graphics();
+    throwG.fillStyle(0xdd6600, 0.9);
+    throwG.fillRoundedRect(this.W - 180, ctrlY - 30, 150, 55, 10);
+    this.add.text(this.W - 105, ctrlY, 'THROW', {
+      fontSize: '24px', fontFamily: 'Arial', color: '#fff', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.add.zone(this.W - 105, ctrlY, 150, 55).setInteractive().on('pointerdown', () => this.throwStone());
+  }
+
+  setupControls() {
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.key1 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+    this.key2 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
+    this.key3 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+
+    this.input.keyboard.on('keydown-UP', () => this.moveLane(-1));
+    this.input.keyboard.on('keydown-DOWN', () => this.moveLane(1));
+    this.input.keyboard.on('keydown-SPACE', () => this.throwStone());
+    this.input.keyboard.on('keydown-ONE', () => this.buildFortification('wall'));
+    this.input.keyboard.on('keydown-TWO', () => this.buildFortification('fire'));
+    this.input.keyboard.on('keydown-THREE', () => this.buildFortification('ice'));
+  }
+
+  moveLane(dir) {
+    if (this.gameOver) return;
+    const newLane = Phaser.Math.Clamp(this.currentLane + dir, 0, this.laneCount - 1);
+    if (newLane !== this.currentLane) {
+      this.currentLane = newLane;
+      this.tweens.add({
+        targets: this.player,
+        y: this.laneYPositions[this.currentLane],
+        duration: 120,
+        ease: 'Power2',
+      });
+    }
+  }
+
+  throwStone() {
+    if (this.gameOver) return;
+    if (this.throwCooldown > 0) return;
+
+    this.throwCooldown = this.throwCooldownMax;
+
+    const stone = this.add.image(this.playerX - 40, this.laneYPositions[this.currentLane], 'stone');
+    stone.setScale(1.2);
+    stone.lane = this.currentLane;
+    stone.speed = 600; // px per second
+    this.stones.push(stone);
+
+    // Flash player for throw effect
+    this.player.setTint(0xffaa00);
+    this.time.delayedCall(100, () => {
+      if (this.player) this.player.clearTint();
+    });
+  }
+
+  buildFortification(type) {
+    if (this.gameOver) return;
+    const fort = FORT_TYPES[type];
+    if (this.resources < fort.cost) {
+      this.showStatus('자원이 부족합니다!', 0xff4444);
+      return;
+    }
+
+    // Check max 2 per lane
+    const laneForts = this.fortifications.filter(f => f.lane === this.currentLane && !f.destroyed);
+    if (laneForts.length >= 2) {
+      this.showStatus('이 레인에 더 설치할 수 없습니다!', 0xff4444);
+      return;
+    }
+
+    this.resources -= fort.cost;
+    this.updateResourceText();
+
+    // Place fortification at a reasonable X position
+    const xPositions = [350, 250]; // two possible positions per lane
+    const xPos = xPositions[laneForts.length] || 300;
+
+    const sprite = this.add.image(xPos, this.laneYPositions[this.currentLane], fort.texture);
+    sprite.setScale(1.2);
+
+    const fortObj = {
+      lane: this.currentLane,
+      type: type,
+      sprite: sprite,
+      hp: fort.hp,
+      maxHp: fort.hp,
+      destroyed: false,
+      x: xPos,
+      lastFireTime: 0,
+    };
+
+    // HP bar for walls
+    if (type === 'wall') {
+      fortObj.hpBar = this.add.graphics();
+      this.updateFortHPBar(fortObj);
+    }
+
+    this.fortifications.push(fortObj);
+    this.showStatus(`${fort.name} 설치!`, 0x4ade80);
+  }
+
+  updateFortHPBar(fort) {
+    if (!fort.hpBar || fort.destroyed) return;
+    fort.hpBar.clear();
+    const barW = 36;
+    const barH = 4;
+    const x = fort.sprite.x - barW / 2;
+    const y = fort.sprite.y - 30;
+    fort.hpBar.fillStyle(0x333333);
+    fort.hpBar.fillRect(x, y, barW, barH);
+    fort.hpBar.fillStyle(0x44ff44);
+    fort.hpBar.fillRect(x, y, barW * (fort.hp / fort.maxHp), barH);
+  }
+
+  startNextWave() {
+    if (this.gameOver) return;
+    this.wave++;
+    this.waveActive = true;
+    const config = getWaveConfig(this.wave);
+
+    this.waveText.setText(`Wave: ${this.wave}`);
+    this.showStatus(`Wave ${this.wave}${config.isBoss ? ' - BOSS!' : ''}`, config.isBoss ? 0xff4444 : 0xFFD700);
+
+    this.bugsRemaining = config.bugCount + (config.isBoss ? 1 : 0);
+
+    // Spawn bugs over time
+    let spawnIndex = 0;
+    const spawnInterval = Math.max(400, 1500 - this.wave * 40);
+
+    const spawnTimer = this.time.addEvent({
+      delay: spawnInterval,
+      callback: () => {
+        if (this.gameOver) { spawnTimer.destroy(); return; }
+        if (spawnIndex < config.bugCount) {
+          const type = Phaser.Utils.Array.GetRandom(config.types);
+          const lane = Phaser.Math.Between(0, this.laneCount - 1);
+          this.spawnBug(type, lane);
+          spawnIndex++;
+        }
+      },
+      repeat: config.bugCount - 1,
+    });
+
+    // Spawn boss
+    if (config.isBoss) {
+      this.time.delayedCall(config.bugCount * spawnInterval + 1000, () => {
+        if (!this.gameOver) {
+          this.showStatus('BOSS: 거미!', 0xff0000);
+          const bossLane = Phaser.Math.Between(1, 3);
+          this.spawnBug('spider', bossLane);
+        }
+      });
+    }
+  }
+
+  spawnBug(type, lane) {
+    const def = BUG_TYPES[type];
+    // Speed increases slightly each wave
+    const speedMult = 1 + (this.wave - 1) * 0.03;
+    const bug = this.add.image(-20, this.laneYPositions[lane], def.texture);
+    bug.setScale(def.scale);
+    bug.lane = lane;
+    bug.bugType = type;
+    bug.hp = def.hp;
+    bug.maxHp = def.hp;
+    bug.speed = def.speed * speedMult;
+    bug.baseSpeed = bug.speed;
+    bug.reward = def.reward;
+    bug.slowed = false;
+    bug.slowTimer = 0;
+    bug.alive = true;
+
+    // HP bar for bugs with more than 1 HP
+    if (def.hp > 1) {
+      bug.hpBar = this.add.graphics();
+    }
+
+    this.bugs.push(bug);
+  }
+
+  showStatus(text, color = 0xFFD700) {
+    this.statusText.setText(text);
+    this.statusText.setColor(`#${color.toString(16).padStart(6, '0')}`);
+    this.statusText.setAlpha(1);
+    this.tweens.add({
+      targets: this.statusText,
+      alpha: 0,
+      duration: 2000,
+      delay: 500,
+      ease: 'Power2',
+    });
+  }
+
+  updateHPBar() {
+    this.hpBar.clear();
+    const barW = this.W - 24;
+    this.hpBar.fillStyle(0xff4444, 1);
+    this.hpBar.fillRoundedRect(12, 78, barW * (this.playerHP / this.maxHP), 12, 3);
+    this.hpText.setText(`HP: ${this.playerHP}/${this.maxHP}`);
+  }
+
+  updateResourceText() {
+    this.resourceText.setText(`$ ${this.resources}`);
+  }
+
+  updateBugHPBar(bug) {
+    if (!bug.hpBar) return;
+    bug.hpBar.clear();
+    if (!bug.alive) return;
+    const barW = 30;
+    const barH = 4;
+    const x = bug.x - barW / 2;
+    const y = bug.y - 22;
+    bug.hpBar.fillStyle(0x333333);
+    bug.hpBar.fillRect(x, y, barW, barH);
+    bug.hpBar.fillStyle(bug.hp > bug.maxHp * 0.5 ? 0x44ff44 : 0xff4444);
+    bug.hpBar.fillRect(x, y, barW * (bug.hp / bug.maxHp), barH);
+  }
+
+  damageBug(bug, damage) {
+    if (!bug.alive) return;
+    bug.hp -= damage;
+    if (bug.hp <= 0) {
+      this.killBug(bug);
+    } else {
+      // Flash red
+      bug.setTint(0xff0000);
+      this.time.delayedCall(100, () => {
+        if (bug.alive) bug.clearTint();
+      });
+      this.updateBugHPBar(bug);
+    }
+  }
+
+  killBug(bug) {
+    bug.alive = false;
+    this.score += bug.reward;
+    this.resources += bug.reward;
+    this.totalBugsKilled++;
+    this.bugsRemaining--;
+    this.scoreText.setText(`Score: ${this.score}`);
+    this.updateResourceText();
+
+    // Death effect
+    this.tweens.add({
+      targets: bug,
+      alpha: 0,
+      scaleX: 0.1,
+      scaleY: 0.1,
+      duration: 200,
+      onComplete: () => {
+        if (bug.hpBar) bug.hpBar.destroy();
+        bug.destroy();
+      },
+    });
+
+    // Score popup
+    const popText = this.add.text(bug.x, bug.y - 20, `+${bug.reward}`, {
+      fontSize: '18px', fontFamily: 'Arial', color: '#4ade80', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.tweens.add({
+      targets: popText,
+      y: bug.y - 60,
+      alpha: 0,
+      duration: 600,
+      onComplete: () => popText.destroy(),
+    });
+
+    // Check wave complete
+    if (this.bugsRemaining <= 0 && this.waveActive) {
+      this.waveActive = false;
+      this.time.delayedCall(2000, () => {
+        if (!this.gameOver) {
+          this.showStatus('Wave Clear!', 0x4ade80);
+          // Bonus resources
+          const bonus = 20 + this.wave * 5;
+          this.resources += bonus;
+          this.updateResourceText();
+          this.time.delayedCall(2000, () => this.startNextWave());
+        }
+      });
+    }
+  }
+
+  bugReachedEnd(bug) {
+    if (!bug.alive) return;
+    bug.alive = false;
+    this.bugsRemaining--;
+    this.playerHP--;
+    this.updateHPBar();
+
+    // Flash screen red
+    this.cameras.main.flash(200, 255, 0, 0);
+
+    // Remove bug
+    if (bug.hpBar) bug.hpBar.destroy();
+    bug.destroy();
+
+    if (this.playerHP <= 0) {
+      this.doGameOver();
+    }
+
+    // Check wave complete after bug leaves
+    if (this.bugsRemaining <= 0 && this.waveActive) {
+      this.waveActive = false;
+      this.time.delayedCall(2000, () => {
+        if (!this.gameOver) {
+          this.showStatus('Wave Clear!', 0x4ade80);
+          const bonus = 20 + this.wave * 5;
+          this.resources += bonus;
+          this.updateResourceText();
+          this.time.delayedCall(2000, () => this.startNextWave());
+        }
+      });
+    }
+  }
+
+  doGameOver() {
+    if (this.gameOver) return;
+    this.gameOver = true;
+
+    this.player.play(`${this.charKey}_hurt`);
+    this.cameras.main.shake(500, 0.02);
+
+    this.time.delayedCall(1500, () => {
+      this.scene.start('GameOverScene', {
+        character: this.charKey,
+        score: this.score,
+        wave: this.wave,
+        bugsKilled: this.totalBugsKilled,
+      });
+    });
+  }
+
+  update(time, delta) {
+    if (this.gameOver) return;
+
+    // Throw cooldown
+    if (this.throwCooldown > 0) {
+      this.throwCooldown -= delta;
+    }
+
+    // Update stones
+    for (let i = this.stones.length - 1; i >= 0; i--) {
+      const stone = this.stones[i];
+      stone.x -= stone.speed * (delta / 1000);
+
+      // Check collision with bugs in same lane
+      let hit = false;
+      for (const bug of this.bugs) {
+        if (!bug.alive) continue;
+        if (bug.lane !== stone.lane) continue;
+        const dist = Phaser.Math.Distance.Between(stone.x, stone.y, bug.x, bug.y);
+        if (dist < 30) {
+          this.damageBug(bug, 1);
+          hit = true;
+          break;
+        }
+      }
+
+      if (hit || stone.x < -20) {
+        stone.destroy();
+        this.stones.splice(i, 1);
+      }
+    }
+
+    // Update bugs
+    for (let i = this.bugs.length - 1; i >= 0; i--) {
+      const bug = this.bugs[i];
+      if (!bug.alive) {
+        this.bugs.splice(i, 1);
+        continue;
+      }
+
+      // Slow timer
+      if (bug.slowed) {
+        bug.slowTimer -= delta;
+        if (bug.slowTimer <= 0) {
+          bug.slowed = false;
+          bug.speed = bug.baseSpeed;
+          bug.clearTint();
+        }
+      }
+
+      // Move bug right
+      bug.x += bug.speed * (delta / 1000);
+
+      // Update HP bar position
+      this.updateBugHPBar(bug);
+
+      // Check collision with fortifications
+      for (const fort of this.fortifications) {
+        if (fort.destroyed) continue;
+        if (fort.lane !== bug.lane) continue;
+        const dist = Math.abs(bug.x - fort.x);
+        if (dist < 25) {
+          if (fort.type === 'wall') {
+            // Wall blocks bug - push back slightly
+            bug.x = fort.x - 26;
+            // Wall takes damage over time
+            if (!fort._lastHitTime || time - fort._lastHitTime > 500) {
+              fort._lastHitTime = time;
+              fort.hp--;
+              this.updateFortHPBar(fort);
+              if (fort.hp <= 0) {
+                this.destroyFort(fort);
+              }
+            }
+          } else if (fort.type === 'fire') {
+            // Fire deals damage
+            if (!fort.lastFireTime || time - fort.lastFireTime > FORT_TYPES.fire.interval) {
+              fort.lastFireTime = time;
+              this.damageBug(bug, FORT_TYPES.fire.damage);
+              // Fire visual
+              fort.sprite.setTint(0xffff00);
+              this.time.delayedCall(100, () => {
+                if (!fort.destroyed) fort.sprite.clearTint();
+              });
+            }
+          } else if (fort.type === 'ice') {
+            // Ice slows bug
+            if (!bug.slowed) {
+              bug.slowed = true;
+              bug.slowTimer = FORT_TYPES.ice.duration;
+              bug.speed = bug.baseSpeed * FORT_TYPES.ice.slowFactor;
+              bug.setTint(0x88ccff);
+            }
+          }
+        }
+      }
+
+      // Bug reached right side
+      if (bug.x >= this.W - 40) {
+        this.bugReachedEnd(bug);
+        this.bugs.splice(i, 1);
+      }
+    }
+
+    // Clean up destroyed fortifications list periodically
+    this.fortifications = this.fortifications.filter(f => !f.destroyed);
+  }
+
+  destroyFort(fort) {
+    fort.destroyed = true;
+    if (fort.hpBar) fort.hpBar.destroy();
+    this.tweens.add({
+      targets: fort.sprite,
+      alpha: 0,
+      duration: 300,
+      onComplete: () => fort.sprite.destroy(),
+    });
+  }
+}
