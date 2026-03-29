@@ -62,6 +62,7 @@ export default class GameScene extends Phaser.Scene {
     this.bugsRemaining = 0;
     this.totalBugsKilled = 0;
     this._waveCompleteScheduled = false; // Bug #2: prevent duplicate wave completion
+    this._bossSpawnTimer = null; // Bug R5: track boss spawn timer
 
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
@@ -451,10 +452,11 @@ export default class GameScene extends Phaser.Scene {
       repeat: config.bugCount - 1,
     });
 
-    // Spawn boss
+    // Spawn boss — track timer so we can cancel if wave completes early
     if (config.isBoss) {
-      this.time.delayedCall(config.bugCount * spawnInterval + 1000, () => {
-        if (!this.gameOver) {
+      this._bossSpawnTimer = this.time.delayedCall(config.bugCount * spawnInterval + 1000, () => {
+        this._bossSpawnTimer = null;
+        if (!this.gameOver && this.waveActive) {
           this.showStatus('BOSS: 거미!', 0xff0000);
           const bossLane = Phaser.Math.Between(1, 3);
           this.spawnBug('spider', bossLane);
@@ -642,8 +644,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   // Bug #2: Extract wave completion to single method with flag to prevent double-firing
+  // Bug R5: Cancel pending boss spawn if wave completes early
   checkWaveComplete() {
     if (this.bugsRemaining <= 0 && this.waveActive && !this._waveCompleteScheduled) {
+      // Cancel pending boss spawn timer if it hasn't fired yet
+      if (this._bossSpawnTimer) {
+        this._bossSpawnTimer.destroy();
+        this._bossSpawnTimer = null;
+      }
       this._waveCompleteScheduled = true;
       this.waveActive = false;
       this.time.delayedCall(2000, () => {
@@ -786,8 +794,12 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // Clean up destroyed fortifications list periodically
-    this.fortifications = this.fortifications.filter(f => !f.destroyed);
+    // Clean up destroyed fortifications list periodically (every 60 frames instead of every frame)
+    this._fortCleanupCounter = (this._fortCleanupCounter || 0) + 1;
+    if (this._fortCleanupCounter >= 60) {
+      this._fortCleanupCounter = 0;
+      this.fortifications = this.fortifications.filter(f => !f.destroyed);
+    }
   }
 
   destroyFort(fort) {
