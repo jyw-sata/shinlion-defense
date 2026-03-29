@@ -86,15 +86,13 @@ export default class GameScene extends Phaser.Scene {
 
     // Cherry blossom tree (지키는 대상) — right edge, drawn first (behind character)
     this.cherryTree = this.add.graphics();
-    this.drawCherryTree(this.W - 50, this.laneTopY + this.laneCount * this.laneHeight / 2);
+    this.drawCherryTree(this.W - 65, this.laneTopY + this.laneCount * this.laneHeight / 2);
 
     // Character sprite — compact, facing left toward bugs
     this.player = this.add.sprite(this.playerX, this.laneYPositions[this.currentLane], `${this.charKey}_idle_0`);
     this.player.setScale(0.35);
-    // Sprite faces right by default → no flip needed to face right
-    // But we need character to face LEFT (toward bugs coming from left)
-    // Try both: if sprite faces right by default, flipX=true makes it face left
-    this.player.setFlipX(true);
+    // Sprite already faces left by default — flipX=true was flipping to right
+    // Remove flipX to keep facing left (toward bugs)
     this.player.play(`${this.charKey}_idle`);
 
     // UI
