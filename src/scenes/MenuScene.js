@@ -8,10 +8,12 @@ export default class MenuScene extends Phaser.Scene {
   create() {
     const W = 720, H = 1280;
 
-    // Background gradient
+    // Background (Bug #10: solid fill for Canvas compatibility)
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x1a2e1a, 0x1a2e1a, 0x2d5a2d, 0x2d5a2d, 1);
+    bg.fillStyle(0x2d5a2d, 1);
     bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x1a2e1a, 0.5);
+    bg.fillRect(0, 0, W, H / 2);
 
     // Title
     this.add.text(W / 2, 120, '신라이언 디펜스', {
@@ -100,15 +102,10 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const hitZone = this.add.zone(x, y + 157, 160, 45).setInteractive();
-    hitZone.on('pointerover', () => {
+    // Bug #13: Use pointerdown/pointerup instead of pointerover/pointerout for mobile
+    hitZone.on('pointerdown', () => {
       btnG.clear(); btnG.fillStyle(0x6bff9e, 1);
       btnG.fillRoundedRect(x - 80, y + 135, 160, 45, 12);
-    });
-    hitZone.on('pointerout', () => {
-      btnG.clear(); btnG.fillStyle(0x4ade80, 1);
-      btnG.fillRoundedRect(x - 80, y + 135, 160, 45, 12);
-    });
-    hitZone.on('pointerdown', () => {
       this.cameras.main.fadeOut(300, 0, 0, 0);
       this.time.delayedCall(300, () => {
         this.scene.start('GameScene', { character: charKey });

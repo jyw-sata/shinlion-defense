@@ -31,7 +31,7 @@ function getWaveConfig(waveNum) {
 // Fortification definitions
 const FORT_TYPES = {
   wall: { texture: 'fort_wall', cost: 50, hp: 5, name: 'Stone Wall', color: 0x888888 },
-  fire: { texture: 'fort_fire', cost: 100, hp: 999, name: 'Fire Trap', color: 0xff4400, damage: 1, interval: 1000 },
+  fire: { texture: 'fort_fire', cost: 100, hp: 999, name: 'Fire Trap', color: 0xff4400, damage: 3, interval: 250 },
   ice:  { texture: 'fort_ice',  cost: 75, hp: 999, name: 'Ice Wall', color: 0x88ccff, slowFactor: 0.4, duration: 3000 },
 };
 
@@ -61,6 +61,7 @@ export default class GameScene extends Phaser.Scene {
     this.waveActive = false;
     this.bugsRemaining = 0;
     this.totalBugsKilled = 0;
+    this._waveCompleteScheduled = false; // Bug #2: prevent duplicate wave completion
 
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
@@ -98,13 +99,43 @@ export default class GameScene extends Phaser.Scene {
     this.time.delayedCall(1500, () => this.startNextWave());
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
+
+    // Bug #4/#5: Clean up on scene shutdown to prevent listener accumulation
+    this.events.once('shutdown', () => this.shutdown());
+  }
+
+  // Bug #5: Scene cleanup method
+  shutdown() {
+    // Remove all keyboard listeners
+    if (this.input && this.input.keyboard) {
+      this.input.keyboard.removeAllListeners();
+    }
+
+    // Stop all tweens
+    if (this.tweens) {
+      this.tweens.killAll();
+    }
+
+    // Stop all timers
+    if (this.time) {
+      this.time.removeAllEvents();
+    }
+
+    // Clean up references
+    this.bugs = [];
+    this.stones = [];
+    this.fortifications = [];
+    this.player = null;
   }
 
   drawBackground() {
     const bg = this.add.graphics();
-    // Sky/ground gradient
-    bg.fillGradientStyle(0x1a3a1a, 0x1a3a1a, 0x2d5a2d, 0x2d5a2d, 1);
+    // Bug #10: Replace fillGradientStyle with solid fill (Canvas compatibility)
+    bg.fillStyle(0x2d5a2d, 1);
     bg.fillRect(0, 0, this.W, this.H);
+    // Add a second rect on top for gradient effect
+    bg.fillStyle(0x1a3a1a, 0.5);
+    bg.fillRect(0, 0, this.W, this.H / 2);
 
     // Lane backgrounds
     for (let i = 0; i < this.laneCount; i++) {
@@ -225,31 +256,61 @@ export default class GameScene extends Phaser.Scene {
   createMobileControls() {
     const ctrlY = this.H - 80;
 
+    // Bug #13: Use pointerdown/pointerup for mobile-friendly visual feedback
+
     // Up button
     const upG = this.add.graphics();
-    upG.fillStyle(0x4a8a4a, 0.8);
-    upG.fillRoundedRect(30, ctrlY - 30, 80, 55, 10);
+    this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
     this.add.text(70, ctrlY, '▲', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
-    this.add.zone(70, ctrlY, 80, 55).setInteractive().on('pointerdown', () => this.moveLane(-1));
+    const upZone = this.add.zone(70, ctrlY, 80, 55).setInteractive();
+    upZone.on('pointerdown', () => {
+      this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x6aaa6a, 1);
+      this.moveLane(-1);
+    });
+    upZone.on('pointerup', () => {
+      this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
+    });
 
     // Down button
     const downG = this.add.graphics();
-    downG.fillStyle(0x4a8a4a, 0.8);
-    downG.fillRoundedRect(130, ctrlY - 30, 80, 55, 10);
+    this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
     this.add.text(170, ctrlY, '▼', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
-    this.add.zone(170, ctrlY, 80, 55).setInteractive().on('pointerdown', () => this.moveLane(1));
+    const downZone = this.add.zone(170, ctrlY, 80, 55).setInteractive();
+    downZone.on('pointerdown', () => {
+      this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x6aaa6a, 1);
+      this.moveLane(1);
+    });
+    downZone.on('pointerup', () => {
+      this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
+    });
 
     // Throw button
     const throwG = this.add.graphics();
-    throwG.fillStyle(0xdd6600, 0.9);
-    throwG.fillRoundedRect(this.W - 180, ctrlY - 30, 150, 55, 10);
+    this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xdd6600, 0.9);
     this.add.text(this.W - 105, ctrlY, 'THROW', {
       fontSize: '24px', fontFamily: 'Arial', color: '#fff', fontStyle: 'bold',
     }).setOrigin(0.5);
-    this.add.zone(this.W - 105, ctrlY, 150, 55).setInteractive().on('pointerdown', () => this.throwStone());
+    const throwZone = this.add.zone(this.W - 105, ctrlY, 150, 55).setInteractive();
+    throwZone.on('pointerdown', () => {
+      this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xff8822, 1);
+      this.throwStone();
+    });
+    throwZone.on('pointerup', () => {
+      this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xdd6600, 0.9);
+    });
+  }
+
+  // Helper for mobile button drawing
+  _drawMobileBtn(g, x, y, w, h, color, alpha) {
+    g.clear();
+    g.fillStyle(color, alpha);
+    g.fillRoundedRect(x, y, w, h, 10);
   }
 
   setupControls() {
+    // Bug #4: Remove existing keyboard listeners before adding new ones
+    this.input.keyboard.removeAllListeners();
+
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.key1 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
@@ -284,10 +345,14 @@ export default class GameScene extends Phaser.Scene {
 
     this.throwCooldown = this.throwCooldownMax;
 
+    // Bug #7: Stone damage scales with waves — base 1, +1 every 5 waves
+    const stoneDamage = 1 + Math.floor(this.wave / 5);
+
     const stone = this.add.image(this.playerX - 40, this.laneYPositions[this.currentLane], 'stone');
     stone.setScale(1.2);
     stone.lane = this.currentLane;
     stone.speed = 600; // px per second
+    stone.damage = stoneDamage;
     this.stones.push(stone);
 
     // Flash player for throw effect
@@ -360,6 +425,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.wave++;
     this.waveActive = true;
+    this._waveCompleteScheduled = false; // Bug #2: reset flag for new wave
     const config = getWaveConfig(this.wave);
 
     this.waveText.setText(`Wave: ${this.wave}`);
@@ -405,17 +471,26 @@ export default class GameScene extends Phaser.Scene {
     bug.setScale(def.scale);
     bug.lane = lane;
     bug.bugType = type;
-    bug.hp = def.hp;
-    bug.maxHp = def.hp;
+
+    // Bug #8: Boss HP scales with waves — HP = 10 + (wave * 2)
+    if (type === 'spider') {
+      bug.hp = 10 + (this.wave * 2);
+      bug.maxHp = bug.hp;
+    } else {
+      bug.hp = def.hp;
+      bug.maxHp = def.hp;
+    }
+
     bug.speed = def.speed * speedMult;
     bug.baseSpeed = bug.speed;
     bug.reward = def.reward;
     bug.slowed = false;
     bug.slowTimer = 0;
     bug.alive = true;
+    bug.lastDrawnHP = -1; // Bug #12: Track last drawn HP
 
     // HP bar for bugs with more than 1 HP
-    if (def.hp > 1) {
+    if (bug.maxHp > 1) {
       bug.hpBar = this.add.graphics();
     }
 
@@ -449,8 +524,29 @@ export default class GameScene extends Phaser.Scene {
 
   updateBugHPBar(bug) {
     if (!bug.hpBar) return;
-    bug.hpBar.clear();
     if (!bug.alive) return;
+
+    // Bug #12: Only redraw HP bar when HP actually changes
+    if (bug.lastDrawnHP === bug.hp) {
+      // Only update position if needed
+      if (bug.hpBar._lastX !== bug.x || bug.hpBar._lastY !== bug.y) {
+        bug.hpBar.clear();
+        const barW = 30;
+        const barH = 4;
+        const x = bug.x - barW / 2;
+        const y = bug.y - 22;
+        bug.hpBar.fillStyle(0x333333);
+        bug.hpBar.fillRect(x, y, barW, barH);
+        bug.hpBar.fillStyle(bug.hp > bug.maxHp * 0.5 ? 0x44ff44 : 0xff4444);
+        bug.hpBar.fillRect(x, y, barW * (bug.hp / bug.maxHp), barH);
+        bug.hpBar._lastX = bug.x;
+        bug.hpBar._lastY = bug.y;
+      }
+      return;
+    }
+
+    bug.lastDrawnHP = bug.hp;
+    bug.hpBar.clear();
     const barW = 30;
     const barH = 4;
     const x = bug.x - barW / 2;
@@ -459,6 +555,8 @@ export default class GameScene extends Phaser.Scene {
     bug.hpBar.fillRect(x, y, barW, barH);
     bug.hpBar.fillStyle(bug.hp > bug.maxHp * 0.5 ? 0x44ff44 : 0xff4444);
     bug.hpBar.fillRect(x, y, barW * (bug.hp / bug.maxHp), barH);
+    bug.hpBar._lastX = bug.x;
+    bug.hpBar._lastY = bug.y;
   }
 
   damageBug(bug, damage) {
@@ -477,11 +575,15 @@ export default class GameScene extends Phaser.Scene {
   }
 
   killBug(bug) {
+    if (!bug.alive) return; // Guard against double-kill
     bug.alive = false;
     this.score += bug.reward;
     this.resources += bug.reward;
     this.totalBugsKilled++;
-    this.bugsRemaining--;
+
+    // Bug #3: Guard against bugsRemaining going negative
+    if (this.bugsRemaining > 0) this.bugsRemaining--;
+
     this.scoreText.setText(`Score: ${this.score}`);
     this.updateResourceText();
 
@@ -510,33 +612,24 @@ export default class GameScene extends Phaser.Scene {
       onComplete: () => popText.destroy(),
     });
 
-    // Check wave complete
-    if (this.bugsRemaining <= 0 && this.waveActive) {
-      this.waveActive = false;
-      this.time.delayedCall(2000, () => {
-        if (!this.gameOver) {
-          this.showStatus('Wave Clear!', 0x4ade80);
-          // Bonus resources
-          const bonus = 20 + this.wave * 5;
-          this.resources += bonus;
-          this.updateResourceText();
-          this.time.delayedCall(2000, () => this.startNextWave());
-        }
-      });
-    }
+    // Bug #2: Use shared wave completion check
+    this.checkWaveComplete();
   }
 
   bugReachedEnd(bug) {
     if (!bug.alive) return;
     bug.alive = false;
-    this.bugsRemaining--;
+
+    // Bug #3: Guard against bugsRemaining going negative
+    if (this.bugsRemaining > 0) this.bugsRemaining--;
+
     this.playerHP--;
     this.updateHPBar();
 
     // Flash screen red
     this.cameras.main.flash(200, 255, 0, 0);
 
-    // Remove bug
+    // Remove bug visuals (Bug #1: do NOT splice array here, let dead-bug cleanup handle it)
     if (bug.hpBar) bug.hpBar.destroy();
     bug.destroy();
 
@@ -544,8 +637,14 @@ export default class GameScene extends Phaser.Scene {
       this.doGameOver();
     }
 
-    // Check wave complete after bug leaves
-    if (this.bugsRemaining <= 0 && this.waveActive) {
+    // Bug #2: Use shared wave completion check
+    this.checkWaveComplete();
+  }
+
+  // Bug #2: Extract wave completion to single method with flag to prevent double-firing
+  checkWaveComplete() {
+    if (this.bugsRemaining <= 0 && this.waveActive && !this._waveCompleteScheduled) {
+      this._waveCompleteScheduled = true;
       this.waveActive = false;
       this.time.delayedCall(2000, () => {
         if (!this.gameOver) {
@@ -587,16 +686,22 @@ export default class GameScene extends Phaser.Scene {
     // Update stones
     for (let i = this.stones.length - 1; i >= 0; i--) {
       const stone = this.stones[i];
+      // Bug #11: skip destroyed stones
+      if (!stone || !stone.active) {
+        this.stones.splice(i, 1);
+        continue;
+      }
       stone.x -= stone.speed * (delta / 1000);
 
       // Check collision with bugs in same lane
       let hit = false;
       for (const bug of this.bugs) {
+        // Bug #11: Early exit — skip dead bugs
         if (!bug.alive) continue;
         if (bug.lane !== stone.lane) continue;
         const dist = Phaser.Math.Distance.Between(stone.x, stone.y, bug.x, bug.y);
         if (dist < 30) {
-          this.damageBug(bug, 1);
+          this.damageBug(bug, stone.damage); // Bug #7: Use stone's scaled damage
           hit = true;
           break;
         }
@@ -612,6 +717,7 @@ export default class GameScene extends Phaser.Scene {
     for (let i = this.bugs.length - 1; i >= 0; i--) {
       const bug = this.bugs[i];
       if (!bug.alive) {
+        // Bug #1: Dead-bug cleanup is the single place we splice
         this.bugs.splice(i, 1);
         continue;
       }
@@ -634,6 +740,7 @@ export default class GameScene extends Phaser.Scene {
 
       // Check collision with fortifications
       for (const fort of this.fortifications) {
+        // Bug #11: Early exit — skip destroyed forts
         if (fort.destroyed) continue;
         if (fort.lane !== bug.lane) continue;
         const dist = Math.abs(bug.x - fort.x);
@@ -651,7 +758,7 @@ export default class GameScene extends Phaser.Scene {
               }
             }
           } else if (fort.type === 'fire') {
-            // Fire deals damage
+            // Bug #6: Fire trap deals 3 damage every 250ms instead of 1 damage every 1000ms
             if (!fort.lastFireTime || time - fort.lastFireTime > FORT_TYPES.fire.interval) {
               fort.lastFireTime = time;
               this.damageBug(bug, FORT_TYPES.fire.damage);
@@ -662,21 +769,20 @@ export default class GameScene extends Phaser.Scene {
               });
             }
           } else if (fort.type === 'ice') {
-            // Ice slows bug
-            if (!bug.slowed) {
-              bug.slowed = true;
-              bug.slowTimer = FORT_TYPES.ice.duration;
-              bug.speed = bug.baseSpeed * FORT_TYPES.ice.slowFactor;
-              bug.setTint(0x88ccff);
-            }
+            // Bug #9: Remove the !bug.slowed check — reapply slow each time
+            bug.slowed = true;
+            bug.slowTimer = FORT_TYPES.ice.duration;
+            bug.speed = bug.baseSpeed * FORT_TYPES.ice.slowFactor;
+            bug.setTint(0x88ccff);
           }
         }
       }
 
       // Bug reached right side
       if (bug.x >= this.W - 40) {
+        // Bug #1: Do NOT splice here — bugReachedEnd sets alive=false,
+        // and the dead-bug cleanup at the top of this loop will splice next frame
         this.bugReachedEnd(bug);
-        this.bugs.splice(i, 1);
       }
     }
 

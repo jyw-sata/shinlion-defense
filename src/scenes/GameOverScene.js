@@ -25,10 +25,12 @@ export default class GameOverScene extends Phaser.Scene {
     const bestScore = Math.max(prevBestScore, this.finalScore);
     const bestWave = Math.max(prevBestWave, this.finalWave);
 
-    // Background
+    // Background (Bug #10: solid fill for Canvas compatibility)
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x1a0a0a, 0x1a0a0a, 0x2a1010, 0x2a1010, 1);
+    bg.fillStyle(0x2a1010, 1);
     bg.fillRect(0, 0, W, H);
+    bg.fillStyle(0x1a0a0a, 0.5);
+    bg.fillRect(0, 0, W, H / 2);
 
     // Title
     this.add.text(W / 2, 180, 'GAME OVER', {
