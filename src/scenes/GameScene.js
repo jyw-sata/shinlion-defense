@@ -136,38 +136,68 @@ export default class GameScene extends Phaser.Scene {
 
   drawCherryTree(x, y) {
     const g = this.cherryTree;
-    const treeH = this.laneCount * this.laneHeight; // 전체 레인 높이만큼
+    const treeH = this.laneCount * this.laneHeight;
+    const topY = y - treeH * 0.45;
+    const botY = y + treeH * 0.45;
 
-    // 큰 나무 줄기
-    g.fillStyle(0x8B4513, 1);
-    g.fillRect(x - 12, y - treeH * 0.4, 24, treeH * 0.8);
+    // 큰 메인 줄기 (곡선 느낌 — 여러 직사각형으로)
+    g.fillStyle(0x5C3317, 1);
+    g.fillRect(x - 10, topY, 20, treeH * 0.9);
+    // 줄기 그림자
+    g.fillStyle(0x3E1F0D, 0.5);
+    g.fillRect(x - 10, topY, 8, treeH * 0.9);
 
-    // 굵은 가지들
-    g.fillStyle(0x6B3410, 1);
-    g.fillRect(x - 45, y - treeH * 0.35, 90, 10);
-    g.fillRect(x - 40, y - treeH * 0.15, 80, 8);
-    g.fillRect(x - 35, y + treeH * 0.05, 70, 8);
-    g.fillRect(x - 30, y + treeH * 0.25, 60, 8);
-
-    // 벚꽃 — 전체 레인에 걸쳐 풍성하게
-    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB, 0xFF91A4];
-    // 큰 꽃송이 (40개)
-    for (let i = 0; i < 40; i++) {
-      const ox = (Math.random() - 0.5) * 90;
-      const oy = (Math.random() - 0.5) * treeH * 0.9;
-      const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
-      g.fillStyle(color, 0.9);
-      g.fillCircle(x + ox, y + oy, 10 + Math.random() * 8);
+    // 가지들 (왼쪽으로 뻗음 — 게임 영역 쪽)
+    const branches = [
+      { y: topY + treeH * 0.1, w: 70, h: 8, angle: -15 },
+      { y: topY + treeH * 0.25, w: 55, h: 7, angle: 5 },
+      { y: topY + treeH * 0.4, w: 65, h: 8, angle: -10 },
+      { y: topY + treeH * 0.55, w: 50, h: 7, angle: 8 },
+      { y: topY + treeH * 0.7, w: 60, h: 8, angle: -5 },
+      { y: topY + treeH * 0.85, w: 45, h: 7, angle: 10 },
+    ];
+    for (const b of branches) {
+      g.fillStyle(0x6B3410, 1);
+      g.fillRect(x - b.w, b.y, b.w + 15, b.h);
+      // 오른쪽으로도 짧은 가지
+      g.fillRect(x + 5, b.y + 3, 25, b.h - 2);
     }
-    // 작은 꽃잎 (30개)
-    for (let i = 0; i < 30; i++) {
-      g.fillStyle(0xFFB6C1, 0.6);
-      g.fillCircle(x + (Math.random() - 0.5) * 100, y + (Math.random() - 0.5) * treeH, 4 + Math.random() * 5);
+
+    // 벚꽃 구름 — 가지마다 꽃 클러스터
+    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB, 0xFF91A4, 0xFFDAE9];
+    for (const b of branches) {
+      // 가지 위에 꽃 클러스터 (큰 원)
+      for (let i = 0; i < 8; i++) {
+        const bx = x - b.w * 0.3 + (Math.random() - 0.3) * b.w * 0.8;
+        const by = b.y + (Math.random() - 0.5) * 30;
+        const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
+        g.fillStyle(color, 0.85);
+        g.fillCircle(bx, by, 12 + Math.random() * 10);
+      }
+      // 작은 꽃잎
+      for (let i = 0; i < 5; i++) {
+        const bx = x - b.w * 0.5 + Math.random() * b.w;
+        const by = b.y + (Math.random() - 0.5) * 40;
+        g.fillStyle(0xFFB6C1, 0.6);
+        g.fillCircle(bx, by, 5 + Math.random() * 6);
+      }
     }
-    // 떨어지는 꽃잎 효과 (15개)
+
+    // 줄기 주변 추가 벚꽃 (오른쪽 가지)
     for (let i = 0; i < 15; i++) {
-      g.fillStyle(0xFFC0CB, 0.4);
-      g.fillCircle(x + (Math.random() - 0.7) * 120, y + (Math.random() - 0.3) * treeH, 3 + Math.random() * 3);
+      const bx = x + 10 + Math.random() * 30;
+      const by = topY + Math.random() * treeH * 0.9;
+      const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
+      g.fillStyle(color, 0.7);
+      g.fillCircle(bx, by, 8 + Math.random() * 8);
+    }
+
+    // 떨어지는 꽃잎 (바닥 근처)
+    for (let i = 0; i < 20; i++) {
+      g.fillStyle(0xFFC0CB, 0.35);
+      const px = x - 80 + Math.random() * 100;
+      const py = botY - 20 + Math.random() * 40;
+      g.fillCircle(px, py, 2 + Math.random() * 3);
     }
   }
 
@@ -366,6 +396,30 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ONE', () => this.buildFortification('wall'));
     this.input.keyboard.on('keydown-TWO', () => this.buildFortification('fire'));
     this.input.keyboard.on('keydown-THREE', () => this.buildFortification('ice'));
+
+    // Mobile swipe controls — swipe up/down on game area to move lanes
+    this._swipeStartY = null;
+    this.input.on('pointerdown', (pointer) => {
+      // Only track swipe in the game area (not UI buttons at bottom)
+      if (pointer.y < this.laneTopY + this.laneCount * this.laneHeight + 20) {
+        this._swipeStartY = pointer.y;
+      }
+    });
+    this.input.on('pointerup', (pointer) => {
+      if (this._swipeStartY !== null) {
+        const dy = pointer.y - this._swipeStartY;
+        const threshold = 30; // minimum swipe distance
+        if (dy < -threshold) {
+          this.moveLane(-1); // swipe up
+        } else if (dy > threshold) {
+          this.moveLane(1); // swipe down
+        } else if (Math.abs(dy) < 10) {
+          // Tap (not swipe) — throw stone
+          this.throwStone();
+        }
+        this._swipeStartY = null;
+      }
+    });
   }
 
   moveLane(dir) {
