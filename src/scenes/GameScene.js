@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 
 // Bug definitions
 const BUG_TYPES = {
-  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 1.0, name: '개미' },
-  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 1.0, name: '딱정벌레' },
-  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 1.0, name: '모기' },
-  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 1.0, name: '벌' },
-  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 1.8, name: '거미' },
+  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 2.0, name: '개미' },
+  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 2.0, name: '딱정벌레' },
+  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 2.0, name: '모기' },
+  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 2.0, name: '벌' },
+  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 3.0, name: '거미' },
 };
 
 // Wave configurations
@@ -73,8 +73,8 @@ export default class GameScene extends Phaser.Scene {
       this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
     }
 
-    // Character X position (right side)
-    this.playerX = this.W - 100;
+    // Character X position (right side, offset for smaller sprite)
+    this.playerX = this.W - 80;
 
     // Groups
     this.bugs = [];
@@ -84,10 +84,14 @@ export default class GameScene extends Phaser.Scene {
     // Draw background
     this.drawBackground();
 
-    // Character sprite
+    // Cherry blossom tree (지키는 대상) — right side behind character
+    this.cherryTree = this.add.graphics();
+    this.drawCherryTree(this.W - 40, this.laneTopY + this.laneCount * this.laneHeight / 2);
+
+    // Character sprite — smaller, facing left toward bugs
     this.player = this.add.sprite(this.playerX, this.laneYPositions[this.currentLane], `${this.charKey}_idle_0`);
-    this.player.setScale(0.8);
-    this.player.setFlipX(true); // face left
+    this.player.setScale(0.5);
+    this.player.setFlipX(true); // face left toward bugs
     this.player.play(`${this.charKey}_idle`);
 
     // UI
@@ -129,6 +133,36 @@ export default class GameScene extends Phaser.Scene {
     this.player = null;
   }
 
+  drawCherryTree(x, y) {
+    const g = this.cherryTree;
+    // Trunk
+    g.fillStyle(0x8B4513, 1);
+    g.fillRect(x - 8, y - 60, 16, 120);
+    // Branches
+    g.fillStyle(0x6B3410, 1);
+    g.fillRect(x - 25, y - 50, 50, 8);
+    g.fillRect(x - 20, y - 30, 40, 6);
+    g.fillRect(x - 15, y + 10, 35, 6);
+    // Cherry blossoms (pink circles)
+    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB];
+    const positions = [
+      [-20, -70], [0, -80], [20, -65], [-25, -50], [25, -45],
+      [-15, -55], [15, -60], [0, -45], [-30, -40], [30, -35],
+      [-10, -75], [10, -72], [-20, -30], [20, -25], [0, -35],
+      [-15, 5], [15, 10], [0, 15], [-20, 20], [20, 25],
+    ];
+    for (const [ox, oy] of positions) {
+      const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
+      g.fillStyle(color, 0.9);
+      g.fillCircle(x + ox, y + oy, 8 + Math.random() * 6);
+    }
+    // Extra small petals for depth
+    for (let i = 0; i < 10; i++) {
+      g.fillStyle(0xFFB6C1, 0.5);
+      g.fillCircle(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 140, 3 + Math.random() * 4);
+    }
+  }
+
   drawBackground() {
     const bg = this.add.graphics();
     // Bug #10: Replace fillGradientStyle with solid fill (Canvas compatibility)
@@ -157,11 +191,11 @@ export default class GameScene extends Phaser.Scene {
     bg.lineStyle(1, 0x4a8a4a, 0.3);
     bg.lineBetween(0, this.laneTopY + this.laneCount * this.laneHeight, this.W, this.laneTopY + this.laneCount * this.laneHeight);
 
-    // Right side defense zone
-    bg.fillStyle(0x2a4a6a, 0.3);
-    bg.fillRect(this.W - 140, this.laneTopY, 140, this.laneCount * this.laneHeight);
-    bg.lineStyle(2, 0x4a8aaa, 0.4);
-    bg.lineBetween(this.W - 140, this.laneTopY, this.W - 140, this.laneTopY + this.laneCount * this.laneHeight);
+    // Right side defense zone (cherry tree area — soft pink tint)
+    bg.fillStyle(0xFFE4E1, 0.15);
+    bg.fillRect(this.W - 120, this.laneTopY, 120, this.laneCount * this.laneHeight);
+    bg.lineStyle(2, 0xFF69B4, 0.3);
+    bg.lineBetween(this.W - 120, this.laneTopY, this.W - 120, this.laneTopY + this.laneCount * this.laneHeight);
   }
 
   createUI() {
@@ -171,7 +205,7 @@ export default class GameScene extends Phaser.Scene {
     topBar.fillRoundedRect(10, 10, this.W - 20, 60, 10);
 
     // Wave
-    this.waveText = this.add.text(30, 25, 'Wave: 0', {
+    this.waveText = this.add.text(30, 25, 'Wave: 1', {
       fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold',
     });
 
