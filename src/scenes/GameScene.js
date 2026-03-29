@@ -91,7 +91,10 @@ export default class GameScene extends Phaser.Scene {
     // Character sprite — compact, facing left toward bugs
     this.player = this.add.sprite(this.playerX, this.laneYPositions[this.currentLane], `${this.charKey}_idle_0`);
     this.player.setScale(0.35);
-    this.player.setFlipX(false); // face left toward bugs (sprite default faces left)
+    // Sprite faces right by default → no flip needed to face right
+    // But we need character to face LEFT (toward bugs coming from left)
+    // Try both: if sprite faces right by default, flipX=true makes it face left
+    this.player.setFlipX(true);
     this.player.play(`${this.charKey}_idle`);
 
     // UI
@@ -135,31 +138,38 @@ export default class GameScene extends Phaser.Scene {
 
   drawCherryTree(x, y) {
     const g = this.cherryTree;
-    // Trunk
+    const treeH = this.laneCount * this.laneHeight; // 전체 레인 높이만큼
+
+    // 큰 나무 줄기
     g.fillStyle(0x8B4513, 1);
-    g.fillRect(x - 8, y - 60, 16, 120);
-    // Branches
+    g.fillRect(x - 12, y - treeH * 0.4, 24, treeH * 0.8);
+
+    // 굵은 가지들
     g.fillStyle(0x6B3410, 1);
-    g.fillRect(x - 25, y - 50, 50, 8);
-    g.fillRect(x - 20, y - 30, 40, 6);
-    g.fillRect(x - 15, y + 10, 35, 6);
-    // Cherry blossoms (pink circles)
-    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB];
-    const positions = [
-      [-20, -70], [0, -80], [20, -65], [-25, -50], [25, -45],
-      [-15, -55], [15, -60], [0, -45], [-30, -40], [30, -35],
-      [-10, -75], [10, -72], [-20, -30], [20, -25], [0, -35],
-      [-15, 5], [15, 10], [0, 15], [-20, 20], [20, 25],
-    ];
-    for (const [ox, oy] of positions) {
+    g.fillRect(x - 45, y - treeH * 0.35, 90, 10);
+    g.fillRect(x - 40, y - treeH * 0.15, 80, 8);
+    g.fillRect(x - 35, y + treeH * 0.05, 70, 8);
+    g.fillRect(x - 30, y + treeH * 0.25, 60, 8);
+
+    // 벚꽃 — 전체 레인에 걸쳐 풍성하게
+    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB, 0xFF91A4];
+    // 큰 꽃송이 (40개)
+    for (let i = 0; i < 40; i++) {
+      const ox = (Math.random() - 0.5) * 90;
+      const oy = (Math.random() - 0.5) * treeH * 0.9;
       const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
       g.fillStyle(color, 0.9);
-      g.fillCircle(x + ox, y + oy, 8 + Math.random() * 6);
+      g.fillCircle(x + ox, y + oy, 10 + Math.random() * 8);
     }
-    // Extra small petals for depth
-    for (let i = 0; i < 10; i++) {
-      g.fillStyle(0xFFB6C1, 0.5);
-      g.fillCircle(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 140, 3 + Math.random() * 4);
+    // 작은 꽃잎 (30개)
+    for (let i = 0; i < 30; i++) {
+      g.fillStyle(0xFFB6C1, 0.6);
+      g.fillCircle(x + (Math.random() - 0.5) * 100, y + (Math.random() - 0.5) * treeH, 4 + Math.random() * 5);
+    }
+    // 떨어지는 꽃잎 효과 (15개)
+    for (let i = 0; i < 15; i++) {
+      g.fillStyle(0xFFC0CB, 0.4);
+      g.fillCircle(x + (Math.random() - 0.7) * 120, y + (Math.random() - 0.3) * treeH, 3 + Math.random() * 3);
     }
   }
 
