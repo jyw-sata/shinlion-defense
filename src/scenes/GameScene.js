@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 
 // Bug definitions
 const BUG_TYPES = {
-  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 2.0, name: '개미' },
-  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 2.0, name: '딱정벌레' },
-  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 2.0, name: '모기' },
-  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 2.0, name: '벌' },
-  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 3.0, name: '거미' },
+  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 2.5, name: '개미' },
+  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 2.5, name: '딱정벌레' },
+  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 2.5, name: '모기' },
+  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 2.5, name: '벌' },
+  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 3.5, name: '거미' },
 };
 
 // Wave configurations
@@ -66,15 +66,15 @@ export default class GameScene extends Phaser.Scene {
 
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
-    this.laneTopY = 180;
-    this.laneHeight = 160;
+    this.laneTopY = 100;
+    this.laneHeight = 140;
     this.laneYPositions = [];
     for (let i = 0; i < this.laneCount; i++) {
       this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
     }
 
-    // Character X position (right side, offset for smaller sprite)
-    this.playerX = this.W - 80;
+    // Character X position (right side, well within screen)
+    this.playerX = this.W - 150;
 
     // Groups
     this.bugs = [];
@@ -84,14 +84,14 @@ export default class GameScene extends Phaser.Scene {
     // Draw background
     this.drawBackground();
 
-    // Cherry blossom tree (지키는 대상) — right side behind character
+    // Cherry blossom tree (지키는 대상) — right edge, drawn first (behind character)
     this.cherryTree = this.add.graphics();
-    this.drawCherryTree(this.W - 40, this.laneTopY + this.laneCount * this.laneHeight / 2);
+    this.drawCherryTree(this.W - 50, this.laneTopY + this.laneCount * this.laneHeight / 2);
 
-    // Character sprite — smaller, facing left toward bugs
+    // Character sprite — compact, facing left toward bugs
     this.player = this.add.sprite(this.playerX, this.laneYPositions[this.currentLane], `${this.charKey}_idle_0`);
-    this.player.setScale(0.5);
-    this.player.setFlipX(true); // face left toward bugs
+    this.player.setScale(0.35);
+    this.player.setFlipX(false); // face left toward bugs (sprite default faces left)
     this.player.play(`${this.charKey}_idle`);
 
     // UI
