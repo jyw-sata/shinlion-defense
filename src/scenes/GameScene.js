@@ -327,49 +327,49 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createMobileControls() {
-    const ctrlY = this.H - 80;
-
-    // Bug #13: Use pointerdown/pointerup for mobile-friendly visual feedback
+    const ctrlY = this.H - 70;
+    const btnSize = 90; // 버튼 크게
 
     // Up button
     const upG = this.add.graphics();
-    this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
-    this.add.text(70, ctrlY, '▲', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
-    const upZone = this.add.zone(70, ctrlY, 80, 55).setInteractive();
+    this._drawMobileBtn(upG, 20, ctrlY - 35, btnSize, 70, 0x4a8a4a, 0.8);
+    this.add.text(20 + btnSize / 2, ctrlY, '▲', { fontSize: '36px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    const upZone = this.add.zone(20 + btnSize / 2, ctrlY, btnSize, 70).setInteractive();
     upZone.on('pointerdown', () => {
-      this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x6aaa6a, 1);
+      this._drawMobileBtn(upG, 20, ctrlY - 35, btnSize, 70, 0x6aaa6a, 1);
       this.moveLane(-1);
     });
     upZone.on('pointerup', () => {
-      this._drawMobileBtn(upG, 30, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
+      this._drawMobileBtn(upG, 20, ctrlY - 35, btnSize, 70, 0x4a8a4a, 0.8);
     });
 
     // Down button
     const downG = this.add.graphics();
-    this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
-    this.add.text(170, ctrlY, '▼', { fontSize: '30px', color: '#fff' }).setOrigin(0.5);
-    const downZone = this.add.zone(170, ctrlY, 80, 55).setInteractive();
+    this._drawMobileBtn(downG, 20 + btnSize + 10, ctrlY - 35, btnSize, 70, 0x4a8a4a, 0.8);
+    this.add.text(20 + btnSize + 10 + btnSize / 2, ctrlY, '▼', { fontSize: '36px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    const downZone = this.add.zone(20 + btnSize + 10 + btnSize / 2, ctrlY, btnSize, 70).setInteractive();
     downZone.on('pointerdown', () => {
-      this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x6aaa6a, 1);
+      this._drawMobileBtn(downG, 20 + btnSize + 10, ctrlY - 35, btnSize, 70, 0x6aaa6a, 1);
       this.moveLane(1);
     });
     downZone.on('pointerup', () => {
-      this._drawMobileBtn(downG, 130, ctrlY - 30, 80, 55, 0x4a8a4a, 0.8);
+      this._drawMobileBtn(downG, 20 + btnSize + 10, ctrlY - 35, btnSize, 70, 0x4a8a4a, 0.8);
     });
 
-    // Throw button
+    // 던지기 button (큰 버튼)
+    const throwW = 200;
     const throwG = this.add.graphics();
-    this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xdd6600, 0.9);
-    this.add.text(this.W - 105, ctrlY, 'THROW', {
-      fontSize: '24px', fontFamily: 'Arial', color: '#fff', fontStyle: 'bold',
+    this._drawMobileBtn(throwG, this.W - throwW - 20, ctrlY - 35, throwW, 70, 0xdd6600, 0.9);
+    this.add.text(this.W - throwW / 2 - 20, ctrlY, '던지기', {
+      fontSize: '28px', fontFamily: 'Arial', color: '#fff', fontStyle: 'bold',
     }).setOrigin(0.5);
-    const throwZone = this.add.zone(this.W - 105, ctrlY, 150, 55).setInteractive();
+    const throwZone = this.add.zone(this.W - throwW / 2 - 20, ctrlY, throwW, 70).setInteractive();
     throwZone.on('pointerdown', () => {
-      this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xff8822, 1);
+      this._drawMobileBtn(throwG, this.W - throwW - 20, ctrlY - 35, throwW, 70, 0xff8822, 1);
       this.throwStone();
     });
     throwZone.on('pointerup', () => {
-      this._drawMobileBtn(throwG, this.W - 180, ctrlY - 30, 150, 55, 0xdd6600, 0.9);
+      this._drawMobileBtn(throwG, this.W - throwW - 20, ctrlY - 35, throwW, 70, 0xdd6600, 0.9);
     });
   }
 
