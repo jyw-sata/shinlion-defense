@@ -134,11 +134,13 @@ export default class GameScene extends Phaser.Scene {
     this.player = null;
   }
 
-  drawCherryTree(x, y) {
+  drawCherryTree(x, _y) {
     const g = this.cherryTree;
     const treeH = this.laneCount * this.laneHeight;
-    const topY = y - treeH * 0.45;
-    const botY = y + treeH * 0.45;
+    // 레인 영역 정확히 맞춤
+    const topY = this.laneTopY;
+    const botY = this.laneTopY + treeH;
+    const y = (topY + botY) / 2; // 레인 중앙
 
     // 큰 메인 줄기 (곡선 느낌 — 여러 직사각형으로)
     g.fillStyle(0x5C3317, 1);
@@ -147,15 +149,17 @@ export default class GameScene extends Phaser.Scene {
     g.fillStyle(0x3E1F0D, 0.5);
     g.fillRect(x - 10, topY, 8, treeH * 0.9);
 
-    // 가지들 (왼쪽으로 뻗음 — 게임 영역 쪽)
-    const branches = [
-      { y: topY + treeH * 0.1, w: 70, h: 8, angle: -15 },
-      { y: topY + treeH * 0.25, w: 55, h: 7, angle: 5 },
-      { y: topY + treeH * 0.4, w: 65, h: 8, angle: -10 },
-      { y: topY + treeH * 0.55, w: 50, h: 7, angle: 8 },
-      { y: topY + treeH * 0.7, w: 60, h: 8, angle: -5 },
-      { y: topY + treeH * 0.85, w: 45, h: 7, angle: 10 },
-    ];
+    // 각 레인 중앙에 가지 배치 (5개 레인 = 5개 가지 + 위아래 1개씩)
+    const branches = [];
+    for (let i = 0; i < this.laneCount; i++) {
+      const laneY = this.laneYPositions[i];
+      const w = 50 + Math.random() * 30;
+      branches.push({ y: laneY - 5, w, h: 8 });
+    }
+    // 위쪽 추가 가지
+    branches.push({ y: topY + 15, w: 45, h: 7 });
+    // 아래쪽 추가 가지
+    branches.push({ y: botY - 20, w: 40, h: 7 });
     for (const b of branches) {
       g.fillStyle(0x6B3410, 1);
       g.fillRect(x - b.w, b.y, b.w + 15, b.h);
