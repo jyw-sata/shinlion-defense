@@ -567,6 +567,12 @@ export default class GameScene extends Phaser.Scene {
     const speedMult = 1 + (this.wave - 1) * 0.03;
     const bug = this.add.image(-20, this.laneYPositions[lane], def.texture);
     bug.setScale(def.scale);
+    // 벌레 방향 보정 — 왼쪽→오른쪽 이동
+    // 거미/딱정벌레: 텍스처 머리가 오른쪽 → 반전하여 왼쪽을 보게 (공격적 느낌)
+    // 개미/모기/벌: 텍스처 머리가 오른쪽 → 그대로 (이동 방향과 일치)
+    if (type === 'spider' || type === 'beetle') {
+      bug.setFlipX(true);
+    }
     bug.lane = lane;
     bug.bugType = type;
 
