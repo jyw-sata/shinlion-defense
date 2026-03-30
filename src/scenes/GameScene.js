@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 
 // Bug definitions
 const BUG_TYPES = {
-  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 2.5, name: '개미' },
-  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 2.5, name: '딱정벌레' },
-  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 2.5, name: '모기' },
-  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 2.5, name: '벌' },
-  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 3.5, name: '거미' },
+  ant:      { texture: 'bug_ant',      hp: 1, speed: 60,  reward: 10, scale: 1.5, name: '개미' },
+  beetle:   { texture: 'bug_beetle',   hp: 2, speed: 45,  reward: 20, scale: 1.5, name: '딱정벌레' },
+  mosquito: { texture: 'bug_mosquito', hp: 1, speed: 90,  reward: 15, scale: 1.5, name: '모기' },
+  bee:      { texture: 'bug_bee',      hp: 2, speed: 80,  reward: 25, scale: 1.5, name: '벌' },
+  spider:   { texture: 'bug_spider',   hp: 10, speed: 30, reward: 100, scale: 2.5, name: '거미' },
 };
 
 // Wave configurations
