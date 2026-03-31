@@ -66,8 +66,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
-    this.laneTopY = 100;
-    this.laneHeight = 140;
+    this.laneTopY = 200;
+    this.laneHeight = 120;
     this.laneYPositions = [];
     for (let i = 0; i < this.laneCount; i++) {
       this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
@@ -211,20 +211,20 @@ export default class GameScene extends Phaser.Scene {
     const H = this.H;
     const laneBot = this.laneTopY + this.laneCount * this.laneHeight;
 
-    // ── Sky gradient (top area) ──
+    // ── Sky gradient (top area — score bar ~ lane top) ──
     bg.fillStyle(0x87CEEB, 1);
-    bg.fillRect(0, 0, W, this.laneTopY);
+    bg.fillRect(0, 80, W, this.laneTopY - 80);
     bg.fillStyle(0xB3E5FC, 0.5);
-    bg.fillRect(0, 0, W, this.laneTopY / 2);
+    bg.fillRect(0, 80, W, (this.laneTopY - 80) / 2);
 
     // ── Hills behind top trees ──
     const hillColors = [0x66BB6A, 0x5CB85C, 0x4CAF50, 0x43A047, 0x388E3C];
     const hillPositions = [
-      { x: 0, y: this.laneTopY - 10, rx: 200, ry: 40 },
-      { x: 180, y: this.laneTopY - 5, rx: 220, ry: 35 },
-      { x: 380, y: this.laneTopY - 12, rx: 180, ry: 38 },
-      { x: 550, y: this.laneTopY - 8, rx: 200, ry: 42 },
-      { x: 720, y: this.laneTopY - 6, rx: 160, ry: 36 },
+      { x: 0, y: this.laneTopY - 15, rx: 200, ry: 40 },
+      { x: 180, y: this.laneTopY - 10, rx: 220, ry: 35 },
+      { x: 380, y: this.laneTopY - 18, rx: 180, ry: 38 },
+      { x: 550, y: this.laneTopY - 12, rx: 200, ry: 42 },
+      { x: 720, y: this.laneTopY - 10, rx: 160, ry: 36 },
     ];
     hillPositions.forEach((h, i) => {
       bg.fillStyle(hillColors[i], 0.8);
@@ -257,16 +257,21 @@ export default class GameScene extends Phaser.Scene {
     bg.lineStyle(2, 0xFF69B4, 0.3);
     bg.lineBetween(W - 120, this.laneTopY, W - 120, laneBot);
 
-    // ── Top cherry blossom trees (지그재그 왼쪽부터) ──
-    const topTreeXs = [60, 230, 400, 570];
+    // ── Top cherry blossom trees (스코어 아래, 레인 위) ──
+    const topTreeXs = [60, 200, 340, 480, 620];
     topTreeXs.forEach((tx) => {
-      this._drawBgTree(bg, tx, this.laneTopY - 25);
+      this._drawBgTree(bg, tx, this.laneTopY - 35);
     });
 
-    // ── Bottom cherry blossom trees (지그재그 오른쪽부터) ──
-    const botTreeXs = [150, 320, 490, 660];
+    // ── Bottom cherry blossom trees (레인 아래 ~ 컨트롤 사이, 지그재그) ──
+    const botTreeXs = [100, 260, 420, 580];
     botTreeXs.forEach((tx) => {
-      this._drawBgTree(bg, tx, laneBot + 50);
+      this._drawBgTree(bg, tx, laneBot + 60);
+    });
+    // 추가 아래줄 (더 아래쪽)
+    const botTreeXs2 = [180, 360, 540];
+    botTreeXs2.forEach((tx) => {
+      this._drawBgTree(bg, tx, laneBot + 150);
     });
 
     // ── Falling cherry blossom petals ──
