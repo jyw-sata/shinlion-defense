@@ -43,6 +43,13 @@ export default class Boot extends Phaser.Scene {
         }
       }
     }
+
+    // Bug image assets
+    this.load.image('bug_ant_img', 'sprites/bugs/ant.png');
+    this.load.image('bug_beetle_img', 'sprites/bugs/beetle.png');
+    this.load.image('bug_mosquito_img', 'sprites/bugs/mosquito.png');
+    this.load.image('bug_bee_img', 'sprites/bugs/bee.png');
+    this.load.image('bug_spider_img', 'sprites/bugs/spider.png');
   }
 
   create() {
