@@ -66,8 +66,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
-    this.laneTopY = 200;
-    this.laneHeight = 130;
+    this.laneTopY = 160;
+    this.laneHeight = 140;
     this.laneYPositions = [];
     for (let i = 0; i < this.laneCount; i++) {
       this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
@@ -137,71 +137,58 @@ export default class GameScene extends Phaser.Scene {
   drawCherryTree(x, _y) {
     const g = this.cherryTree;
     const treeH = this.laneCount * this.laneHeight;
-    // 레인 영역 정확히 맞춤
     const topY = this.laneTopY;
     const botY = this.laneTopY + treeH;
-    const y = (topY + botY) / 2; // 레인 중앙
 
-    // 큰 메인 줄기 (곡선 느낌 — 여러 직사각형으로)
-    g.fillStyle(0x5C3317, 1);
-    g.fillRect(x - 10, topY, 20, treeH * 0.9);
-    // 줄기 그림자
-    g.fillStyle(0x3E1F0D, 0.5);
-    g.fillRect(x - 10, topY, 8, treeH * 0.9);
+    // ── 러너 스타일 벚꽃나무 (세로로 여러 그루 연결) ──
 
-    // 각 레인 중앙에 가지 배치 (5개 레인 = 5개 가지 + 위아래 1개씩)
-    const branches = [];
+    // 나무 위치: 레인마다 하나씩 (5그루 세로 배치)
     for (let i = 0; i < this.laneCount; i++) {
-      const laneY = this.laneYPositions[i];
-      const w = 50 + Math.random() * 30;
-      branches.push({ y: laneY - 5, w, h: 8 });
-    }
-    // 위쪽 추가 가지
-    branches.push({ y: topY + 15, w: 45, h: 7 });
-    // 아래쪽 추가 가지
-    branches.push({ y: botY - 20, w: 40, h: 7 });
-    for (const b of branches) {
+      const ty = this.laneYPositions[i];
+
+      // 줄기
+      g.fillStyle(0x5D4037, 1);
+      g.fillRect(x - 6, ty - 50, 12, 100);
+
+      // 가지 (왼쪽으로)
       g.fillStyle(0x6B3410, 1);
-      g.fillRect(x - b.w, b.y, b.w + 15, b.h);
-      // 오른쪽으로도 짧은 가지
-      g.fillRect(x + 5, b.y + 3, 25, b.h - 2);
-    }
+      g.fillRect(x - 50, ty - 3, 50, 6);
+      g.fillRect(x - 35, ty - 25, 6, 25);
 
-    // 벚꽃 구름 — 가지마다 꽃 클러스터
-    const blossomColors = [0xFF69B4, 0xFF1493, 0xFFB6C1, 0xFF85A2, 0xFFC0CB, 0xFF91A4, 0xFFDAE9];
-    for (const b of branches) {
-      // 가지 위에 꽃 클러스터 (큰 원)
-      for (let i = 0; i < 8; i++) {
-        const bx = x - b.w * 0.3 + (Math.random() - 0.3) * b.w * 0.8;
-        const by = b.y + (Math.random() - 0.5) * 30;
-        const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
-        g.fillStyle(color, 0.85);
-        g.fillCircle(bx, by, 12 + Math.random() * 10);
-      }
-      // 작은 꽃잎
-      for (let i = 0; i < 5; i++) {
-        const bx = x - b.w * 0.5 + Math.random() * b.w;
-        const by = b.y + (Math.random() - 0.5) * 40;
-        g.fillStyle(0xFFB6C1, 0.6);
-        g.fillCircle(bx, by, 5 + Math.random() * 6);
-      }
-    }
+      // 메인 꽃 덩어리 (러너 스타일 — 큰 원 3개)
+      g.fillStyle(0xF48FB1, 0.9);
+      g.fillCircle(x, ty - 45, 30);
 
-    // 줄기 주변 추가 벚꽃 (오른쪽 가지)
-    for (let i = 0; i < 15; i++) {
-      const bx = x + 10 + Math.random() * 30;
-      const by = topY + Math.random() * treeH * 0.9;
-      const color = blossomColors[Math.floor(Math.random() * blossomColors.length)];
-      g.fillStyle(color, 0.7);
-      g.fillCircle(bx, by, 8 + Math.random() * 8);
+      g.fillStyle(0xF8BBD0, 0.85);
+      g.fillCircle(x - 20, ty - 30, 22);
+      g.fillCircle(x + 20, ty - 30, 22);
+
+      // 디테일 작은 꽃
+      g.fillStyle(0xFCE4EC, 0.7);
+      g.fillCircle(x - 10, ty - 55, 10);
+      g.fillCircle(x + 12, ty - 50, 9);
+      g.fillCircle(x - 5, ty - 25, 7);
+
+      // 왼쪽 가지 끝 꽃
+      g.fillStyle(0xF48FB1, 0.8);
+      g.fillCircle(x - 45, ty - 8, 18);
+      g.fillStyle(0xF8BBD0, 0.75);
+      g.fillCircle(x - 35, ty - 15, 14);
+      g.fillCircle(x - 38, ty + 2, 12);
+
+      // 위쪽 가지 끝 꽃
+      g.fillStyle(0xF48FB1, 0.8);
+      g.fillCircle(x - 32, ty - 30, 16);
+      g.fillStyle(0xFCE4EC, 0.6);
+      g.fillCircle(x - 28, ty - 38, 10);
     }
 
     // 떨어지는 꽃잎 (바닥 근처)
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 25; i++) {
       g.fillStyle(0xFFC0CB, 0.35);
-      const px = x - 80 + Math.random() * 100;
-      const py = botY - 20 + Math.random() * 40;
-      g.fillCircle(px, py, 2 + Math.random() * 3);
+      const px = x - 60 + Math.random() * 80;
+      const py = topY + Math.random() * treeH;
+      g.fillCircle(px, py, 2 + Math.random() * 2);
     }
   }
 
