@@ -207,37 +207,140 @@ export default class GameScene extends Phaser.Scene {
 
   drawBackground() {
     const bg = this.add.graphics();
-    // Bug #10: Replace fillGradientStyle with solid fill (Canvas compatibility)
-    bg.fillStyle(0x2d5a2d, 1);
-    bg.fillRect(0, 0, this.W, this.H);
-    // Add a second rect on top for gradient effect
-    bg.fillStyle(0x1a3a1a, 0.5);
-    bg.fillRect(0, 0, this.W, this.H / 2);
+    const W = this.W;
+    const H = this.H;
+    const laneBot = this.laneTopY + this.laneCount * this.laneHeight;
 
-    // Lane backgrounds
+    // ── Sky gradient (top area) ──
+    bg.fillStyle(0x87CEEB, 1);
+    bg.fillRect(0, 0, W, this.laneTopY);
+    bg.fillStyle(0xB3E5FC, 0.5);
+    bg.fillRect(0, 0, W, this.laneTopY / 2);
+
+    // ── Hills behind top trees ──
+    const hillColors = [0x66BB6A, 0x5CB85C, 0x4CAF50, 0x43A047, 0x388E3C];
+    const hillPositions = [
+      { x: 0, y: this.laneTopY - 10, rx: 200, ry: 40 },
+      { x: 180, y: this.laneTopY - 5, rx: 220, ry: 35 },
+      { x: 380, y: this.laneTopY - 12, rx: 180, ry: 38 },
+      { x: 550, y: this.laneTopY - 8, rx: 200, ry: 42 },
+      { x: 720, y: this.laneTopY - 6, rx: 160, ry: 36 },
+    ];
+    hillPositions.forEach((h, i) => {
+      bg.fillStyle(hillColors[i], 0.8);
+      bg.fillEllipse(h.x, h.y, h.rx, h.ry);
+    });
+
+    // ── Grass (lane area + bottom) ──
+    bg.fillStyle(0x4CAF50, 1);
+    bg.fillRect(0, this.laneTopY, W, H - this.laneTopY);
+
+    // ── Lane backgrounds ──
     for (let i = 0; i < this.laneCount; i++) {
       const y = this.laneTopY + i * this.laneHeight;
       const color = i % 2 === 0 ? 0x3a6b3a : 0x2d5a2d;
       bg.fillStyle(color, 0.6);
-      bg.fillRect(0, y, this.W, this.laneHeight);
+      bg.fillRect(0, y, W, this.laneHeight);
 
-      // Lane border
       bg.lineStyle(1, 0x4a8a4a, 0.3);
-      bg.lineBetween(0, y, this.W, y);
+      bg.lineBetween(0, y, W, y);
 
-      // Path/road texture
       bg.fillStyle(0x4a7a4a, 0.3);
-      bg.fillRect(0, y + this.laneHeight / 2 - 20, this.W, 40);
+      bg.fillRect(0, y + this.laneHeight / 2 - 20, W, 40);
     }
-    // Bottom lane border
     bg.lineStyle(1, 0x4a8a4a, 0.3);
-    bg.lineBetween(0, this.laneTopY + this.laneCount * this.laneHeight, this.W, this.laneTopY + this.laneCount * this.laneHeight);
+    bg.lineBetween(0, laneBot, W, laneBot);
 
-    // Right side defense zone (cherry tree area — soft pink tint)
+    // ── Right side defense zone ──
     bg.fillStyle(0xFFE4E1, 0.15);
-    bg.fillRect(this.W - 120, this.laneTopY, 120, this.laneCount * this.laneHeight);
+    bg.fillRect(W - 120, this.laneTopY, 120, this.laneCount * this.laneHeight);
     bg.lineStyle(2, 0xFF69B4, 0.3);
-    bg.lineBetween(this.W - 120, this.laneTopY, this.W - 120, this.laneTopY + this.laneCount * this.laneHeight);
+    bg.lineBetween(W - 120, this.laneTopY, W - 120, laneBot);
+
+    // ── Top cherry blossom trees (지그재그 왼쪽부터) ──
+    const topTreeXs = [60, 230, 400, 570];
+    topTreeXs.forEach((tx) => {
+      this._drawBgTree(bg, tx, this.laneTopY - 25);
+    });
+
+    // ── Bottom cherry blossom trees (지그재그 오른쪽부터) ──
+    const botTreeXs = [150, 320, 490, 660];
+    botTreeXs.forEach((tx) => {
+      this._drawBgTree(bg, tx, laneBot + 50);
+    });
+
+    // ── Falling cherry blossom petals ──
+    this._createPetalEffects();
+  }
+
+  _drawBgTree(g, x, y) {
+    // Trunk
+    g.fillStyle(0x5D4037, 1);
+    g.fillRect(x - 5, y - 25, 10, 50);
+
+    // Main bloom
+    g.fillStyle(0xF48FB1, 0.9);
+    g.fillCircle(x, y - 30, 28);
+
+    // Side blossoms
+    g.fillStyle(0xF8BBD0, 0.85);
+    g.fillCircle(x - 18, y - 22, 18);
+    g.fillCircle(x + 18, y - 22, 18);
+
+    // Detail petals
+    g.fillStyle(0xFCE4EC, 0.7);
+    g.fillCircle(x - 8, y - 42, 8);
+    g.fillCircle(x + 10, y - 38, 7);
+    g.fillCircle(x, y - 18, 6);
+  }
+
+  _createPetalEffects() {
+    // Upper area petals
+    for (let i = 0; i < 10; i++) {
+      const petal = this.add.graphics();
+      petal.fillStyle(0xFFB7C5, 0.6);
+      petal.fillCircle(0, 0, 2 + Math.random() * 2);
+      const startX = Math.random() * this.W;
+      const startY = Math.random() * this.laneTopY;
+      petal.setPosition(startX, startY);
+      this.tweens.add({
+        targets: petal,
+        y: startY + 50 + Math.random() * 100,
+        x: startX + (Math.random() - 0.5) * 60,
+        alpha: 0,
+        duration: 2500 + Math.random() * 2500,
+        repeat: -1,
+        delay: Math.random() * 3000,
+        onRepeat: () => {
+          petal.setPosition(Math.random() * this.W, Math.random() * this.laneTopY * 0.5);
+          petal.setAlpha(0.6);
+        },
+      });
+    }
+
+    // Bottom area petals
+    const laneBot = this.laneTopY + this.laneCount * this.laneHeight;
+    for (let i = 0; i < 10; i++) {
+      const petal = this.add.graphics();
+      petal.fillStyle(0xFFB7C5, 0.4);
+      petal.fillCircle(0, 0, 2 + Math.random() * 1.5);
+      const startX = Math.random() * this.W;
+      const startY = laneBot + 20 + Math.random() * 80;
+      petal.setPosition(startX, startY);
+      this.tweens.add({
+        targets: petal,
+        y: startY + 80 + Math.random() * 120,
+        x: startX + (Math.random() - 0.5) * 50,
+        alpha: 0,
+        duration: 3000 + Math.random() * 3000,
+        repeat: -1,
+        delay: Math.random() * 3000,
+        onRepeat: () => {
+          petal.setPosition(Math.random() * this.W, laneBot + 20 + Math.random() * 40);
+          petal.setAlpha(0.4);
+        },
+      });
+    }
   }
 
   createUI() {
