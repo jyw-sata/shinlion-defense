@@ -67,7 +67,7 @@ export default class GameScene extends Phaser.Scene {
     // Lane positions (Y coordinates) - 5 lanes
     this.laneCount = 5;
     this.laneTopY = 200;
-    this.laneHeight = 120;
+    this.laneHeight = 130;
     this.laneYPositions = [];
     for (let i = 0; i < this.laneCount; i++) {
       this.laneYPositions.push(this.laneTopY + i * this.laneHeight + this.laneHeight / 2);
@@ -263,15 +263,14 @@ export default class GameScene extends Phaser.Scene {
       this._drawBgTree(bg, tx, this.laneTopY - 35);
     });
 
-    // ── Bottom cherry blossom trees (레인 아래 ~ 컨트롤 사이, 지그재그) ──
-    const botTreeXs = [100, 260, 420, 580];
+    // ── Bottom cherry blossom trees (레인 아래 ~ 컨트롤 사이, 지그재그 2줄) ──
+    const botTreeXs = [80, 240, 400, 560];
     botTreeXs.forEach((tx) => {
-      this._drawBgTree(bg, tx, laneBot + 60);
+      this._drawBgTree(bg, tx, laneBot + 55);
     });
-    // 추가 아래줄 (더 아래쪽)
-    const botTreeXs2 = [180, 360, 540];
+    const botTreeXs2 = [160, 320, 480, 640];
     botTreeXs2.forEach((tx) => {
-      this._drawBgTree(bg, tx, laneBot + 150);
+      this._drawBgTree(bg, tx, laneBot + 130);
     });
 
     // ── Falling cherry blossom petals ──
@@ -564,10 +563,12 @@ export default class GameScene extends Phaser.Scene {
     stone.damage = stoneDamage;
     this.stones.push(stone);
 
-    // Flash player for throw effect
-    this.player.setTint(0xffaa00);
-    this.time.delayedCall(100, () => {
-      if (this.player) this.player.clearTint();
+    // Play run animation while throwing
+    this.player.play(`${this.charKey}_run`);
+    this.time.delayedCall(400, () => {
+      if (this.player && !this.gameOver) {
+        this.player.play(`${this.charKey}_idle`);
+      }
     });
   }
 

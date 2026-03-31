@@ -33,8 +33,8 @@ export default class Boot extends Phaser.Scene {
     this.load.setPath(base);
 
     const sprites = {
-      polar: { idle: 8, hurt: 6, dead: 10 },
-      teddy: { idle: 8, hurt: 6, dead: 10 },
+      polar: { idle: 8, hurt: 6, dead: 10, run: 10 },
+      teddy: { idle: 8, hurt: 6, dead: 10, run: 10 },
     };
     for (const [char, anims] of Object.entries(sprites)) {
       for (const [anim, count] of Object.entries(anims)) {
@@ -49,6 +49,7 @@ export default class Boot extends Phaser.Scene {
     // Create animations for both characters
     const animDefs = [
       { key: 'idle', count: 8, rate: 8, repeat: -1 },
+      { key: 'run', count: 10, rate: 14, repeat: -1 },
       { key: 'hurt', count: 6, rate: 10, repeat: 0 },
       { key: 'dead', count: 10, rate: 8, repeat: 0 },
     ];
