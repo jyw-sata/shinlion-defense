@@ -85,205 +85,250 @@ export default class Boot extends Phaser.Scene {
     stoneG.generateTexture('stone', 20, 20);
     stoneG.destroy();
 
-    // --- Ant (detailed, 48x48) ---
+    // --- Ant (upgraded, 64x64) ---
     const antG = this.add.graphics();
-    // Body segments (head, thorax, abdomen)
-    antG.fillStyle(0x8B2500); // dark red-brown
-    antG.fillCircle(36, 24, 8); // head
-    antG.fillEllipse(24, 24, 14, 12); // thorax
-    antG.fillEllipse(10, 24, 16, 14); // abdomen
-    // Mandibles
-    antG.lineStyle(2, 0x5C1800);
-    antG.lineBetween(42, 20, 47, 16);
-    antG.lineBetween(42, 28, 47, 32);
-    // Antennae
-    antG.lineStyle(1.5, 0x6B2000);
-    antG.lineBetween(40, 18, 44, 8);
-    antG.lineBetween(44, 8, 48, 6);
-    antG.lineBetween(40, 18, 42, 10);
-    antG.lineBetween(42, 10, 46, 10);
-    // Legs (6 legs, jointed)
-    antG.lineStyle(2, 0x6B2000);
-    antG.lineBetween(28, 18, 30, 8); antG.lineBetween(30, 8, 34, 4);
-    antG.lineBetween(24, 18, 24, 10); antG.lineBetween(24, 10, 28, 6);
-    antG.lineBetween(20, 18, 18, 10); antG.lineBetween(18, 10, 20, 4);
-    antG.lineBetween(28, 30, 30, 40); antG.lineBetween(30, 40, 34, 44);
-    antG.lineBetween(24, 30, 24, 38); antG.lineBetween(24, 38, 28, 42);
-    antG.lineBetween(20, 30, 18, 38); antG.lineBetween(18, 38, 20, 44);
-    // Eyes
+    // Shadow
+    antG.fillStyle(0x000000, 0.15);
+    antG.fillEllipse(32, 56, 40, 8);
+    // Abdomen
+    antG.fillStyle(0x8B2500);
+    antG.fillEllipse(14, 32, 22, 18);
+    antG.fillStyle(0xA03000, 0.4);
+    antG.fillEllipse(11, 29, 10, 8); // shine
+    // Thorax (waist)
+    antG.fillStyle(0x7A2000);
+    antG.fillEllipse(30, 32, 12, 10);
+    // Head
+    antG.fillStyle(0x8B2500);
+    antG.fillCircle(44, 32, 10);
+    // Eyes (big, cute)
     antG.fillStyle(0xFFFFFF);
-    antG.fillCircle(39, 21, 3);
+    antG.fillCircle(48, 29, 5);
+    antG.fillCircle(48, 35, 5);
     antG.fillStyle(0x000000);
-    antG.fillCircle(40, 21, 1.5);
-    // Shine on abdomen
-    antG.fillStyle(0xA04020, 0.5);
-    antG.fillEllipse(8, 22, 6, 5);
-    antG.generateTexture('bug_ant', 48, 48);
+    antG.fillCircle(50, 29, 2.5);
+    antG.fillCircle(50, 35, 2.5);
+    antG.fillStyle(0xFFFFFF);
+    antG.fillCircle(51, 28, 1);
+    antG.fillCircle(51, 34, 1);
+    // Mandibles
+    antG.lineStyle(2.5, 0x5C1800);
+    antG.lineBetween(53, 28, 60, 22);
+    antG.lineBetween(53, 36, 60, 42);
+    // Antennae (curved)
+    antG.lineStyle(1.5, 0x6B2000);
+    antG.lineBetween(48, 22, 52, 12);
+    antG.lineBetween(52, 12, 58, 8);
+    antG.fillCircle(58, 8, 2);
+    antG.lineBetween(48, 22, 50, 14);
+    antG.lineBetween(50, 14, 56, 12);
+    antG.fillCircle(56, 12, 2);
+    // Legs (6, thicker)
+    antG.lineStyle(2.5, 0x6B2000);
+    antG.lineBetween(34, 26, 38, 14); antG.lineBetween(38, 14, 44, 10);
+    antG.lineBetween(28, 26, 28, 16); antG.lineBetween(28, 16, 34, 10);
+    antG.lineBetween(22, 26, 18, 16); antG.lineBetween(18, 16, 22, 8);
+    antG.lineBetween(34, 38, 38, 50); antG.lineBetween(38, 50, 44, 54);
+    antG.lineBetween(28, 38, 28, 48); antG.lineBetween(28, 48, 34, 52);
+    antG.lineBetween(22, 38, 18, 48); antG.lineBetween(18, 48, 22, 54);
+    antG.generateTexture('bug_ant', 64, 64);
     antG.destroy();
 
-    // --- Beetle (detailed, 48x48) ---
+    // --- Beetle (upgraded, 64x64) ---
     const beetleG = this.add.graphics();
-    // Shell (elytra)
-    beetleG.fillStyle(0x2E8B57); // sea green shell
-    beetleG.fillEllipse(22, 24, 38, 32);
-    // Shell shine
-    beetleG.fillStyle(0x3CB371, 0.6);
-    beetleG.fillEllipse(18, 18, 16, 12);
-    // Shell line (center)
-    beetleG.lineStyle(2, 0x1B6B3A);
-    beetleG.lineBetween(22, 8, 22, 40);
-    // Shell spots
-    beetleG.fillStyle(0x1B5B30);
-    beetleG.fillCircle(14, 20, 3);
-    beetleG.fillCircle(30, 20, 3);
-    beetleG.fillCircle(14, 30, 2.5);
-    beetleG.fillCircle(30, 30, 2.5);
+    beetleG.fillStyle(0x000000, 0.15);
+    beetleG.fillEllipse(32, 56, 44, 8);
+    // Shell
+    beetleG.fillStyle(0x1B7A40);
+    beetleG.fillEllipse(28, 32, 44, 38);
+    // Shell gradient
+    beetleG.fillStyle(0x2E9B57, 0.6);
+    beetleG.fillEllipse(24, 26, 24, 18);
+    // Shell line
+    beetleG.lineStyle(2, 0x0F5A28);
+    beetleG.lineBetween(28, 13, 28, 51);
+    // Shell pattern
+    beetleG.fillStyle(0x0F5A28, 0.5);
+    beetleG.fillCircle(18, 24, 4);
+    beetleG.fillCircle(38, 24, 4);
+    beetleG.fillCircle(18, 36, 3.5);
+    beetleG.fillCircle(38, 36, 3.5);
+    beetleG.fillCircle(28, 28, 3);
     // Head
-    beetleG.fillStyle(0x205030);
-    beetleG.fillCircle(40, 24, 7);
-    // Mandibles
-    beetleG.lineStyle(2, 0x153020);
-    beetleG.lineBetween(45, 20, 48, 17);
-    beetleG.lineBetween(45, 28, 48, 31);
-    // Legs
-    beetleG.lineStyle(2, 0x1A4A2A);
-    beetleG.lineBetween(30, 12, 36, 4);
-    beetleG.lineBetween(22, 10, 24, 2);
-    beetleG.lineBetween(14, 12, 10, 4);
-    beetleG.lineBetween(30, 36, 36, 44);
-    beetleG.lineBetween(22, 38, 24, 46);
-    beetleG.lineBetween(14, 36, 10, 44);
+    beetleG.fillStyle(0x155A30);
+    beetleG.fillCircle(52, 32, 9);
     // Eyes
     beetleG.fillStyle(0xFFFFFF);
-    beetleG.fillCircle(43, 22, 2.5);
+    beetleG.fillCircle(56, 29, 4);
+    beetleG.fillCircle(56, 35, 4);
     beetleG.fillStyle(0x000000);
-    beetleG.fillCircle(44, 22, 1.2);
-    beetleG.generateTexture('bug_beetle', 48, 48);
+    beetleG.fillCircle(57, 29, 2);
+    beetleG.fillCircle(57, 35, 2);
+    // Mandibles
+    beetleG.lineStyle(3, 0x0A3A18);
+    beetleG.lineBetween(59, 27, 64, 22);
+    beetleG.lineBetween(59, 37, 64, 42);
+    // Legs
+    beetleG.lineStyle(2.5, 0x1A5A2A);
+    beetleG.lineBetween(38, 16, 44, 6);
+    beetleG.lineBetween(28, 14, 30, 4);
+    beetleG.lineBetween(18, 16, 12, 6);
+    beetleG.lineBetween(38, 48, 44, 58);
+    beetleG.lineBetween(28, 50, 30, 60);
+    beetleG.lineBetween(18, 48, 12, 58);
+    beetleG.generateTexture('bug_beetle', 64, 64);
     beetleG.destroy();
 
-    // --- Mosquito (detailed, 48x40) ---
+    // --- Mosquito (upgraded, 64x56) ---
     const mosqG = this.add.graphics();
-    // Body (thin, elongated)
+    mosqG.fillStyle(0x000000, 0.1);
+    mosqG.fillEllipse(32, 50, 30, 6);
+    // Wings (large, transparent)
+    mosqG.fillStyle(0xCCDDEE, 0.35);
+    mosqG.fillEllipse(24, 8, 30, 16);
+    mosqG.fillEllipse(24, 48, 30, 16);
+    mosqG.lineStyle(0.5, 0x8899AA, 0.3);
+    mosqG.lineBetween(12, 8, 38, 5);
+    mosqG.lineBetween(12, 48, 38, 51);
+    mosqG.lineBetween(18, 6, 32, 12);
+    mosqG.lineBetween(18, 50, 32, 44);
+    // Body
     mosqG.fillStyle(0x555555);
-    mosqG.fillEllipse(20, 22, 18, 10);
-    // Abdomen (engorged, reddish)
-    mosqG.fillStyle(0x884444);
-    mosqG.fillEllipse(10, 22, 14, 12);
+    mosqG.fillEllipse(26, 28, 22, 12);
+    // Abdomen (blood-filled)
+    mosqG.fillStyle(0x993333);
+    mosqG.fillEllipse(12, 28, 18, 16);
+    mosqG.fillStyle(0xBB4444, 0.4);
+    mosqG.fillEllipse(10, 25, 8, 8);
     // Head
     mosqG.fillStyle(0x444444);
-    mosqG.fillCircle(32, 22, 5);
-    // Proboscis (long needle)
-    mosqG.lineStyle(1.5, 0x333333);
-    mosqG.lineBetween(37, 22, 48, 22);
-    // Wings (transparent, large)
-    mosqG.fillStyle(0xCCDDEE, 0.4);
-    mosqG.fillEllipse(18, 8, 22, 12);
-    mosqG.fillEllipse(18, 36, 22, 12);
-    // Wing veins
-    mosqG.lineStyle(0.5, 0x8899AA, 0.3);
-    mosqG.lineBetween(10, 8, 28, 6);
-    mosqG.lineBetween(10, 36, 28, 38);
-    // Legs (6, thin, dangling)
+    mosqG.fillCircle(40, 28, 7);
+    // Proboscis
+    mosqG.lineStyle(2, 0x333333);
+    mosqG.lineBetween(47, 28, 62, 28);
+    mosqG.lineStyle(1, 0x222222);
+    mosqG.lineBetween(62, 28, 64, 27);
+    mosqG.lineBetween(62, 28, 64, 29);
+    // Eyes (big red compound)
+    mosqG.fillStyle(0xDD2222);
+    mosqG.fillCircle(43, 25, 4);
+    mosqG.fillCircle(43, 31, 4);
+    mosqG.fillStyle(0xFF4444, 0.5);
+    mosqG.fillCircle(42, 24, 2);
+    mosqG.fillCircle(42, 30, 2);
+    // Legs (thin, dangling)
     mosqG.lineStyle(1, 0x444444);
-    mosqG.lineBetween(24, 27, 28, 38);
-    mosqG.lineBetween(20, 27, 20, 40);
-    mosqG.lineBetween(16, 27, 12, 38);
-    // Eyes (compound, red)
-    mosqG.fillStyle(0xCC3333);
-    mosqG.fillCircle(34, 20, 2.5);
-    mosqG.fillCircle(34, 24, 2.5);
-    mosqG.generateTexture('bug_mosquito', 48, 44);
+    mosqG.lineBetween(30, 34, 36, 48);
+    mosqG.lineBetween(26, 34, 26, 50);
+    mosqG.lineBetween(22, 34, 16, 48);
+    mosqG.lineBetween(34, 34, 40, 46);
+    mosqG.lineBetween(18, 34, 10, 46);
+    mosqG.lineBetween(30, 22, 36, 10);
+    mosqG.generateTexture('bug_mosquito', 64, 56);
     mosqG.destroy();
 
-    // --- Bee (detailed, 48x40) ---
+    // --- Bee (upgraded, 64x56) ---
     const beeG = this.add.graphics();
-    // Abdomen (fuzzy yellow-black stripes)
+    beeG.fillStyle(0x000000, 0.15);
+    beeG.fillEllipse(32, 50, 36, 6);
+    // Wings
+    beeG.fillStyle(0xFFFFFF, 0.45);
+    beeG.fillEllipse(34, 6, 28, 14);
+    beeG.fillEllipse(34, 50, 28, 14);
+    beeG.lineStyle(0.5, 0xDDCC88, 0.3);
+    beeG.lineBetween(22, 6, 46, 3);
+    beeG.lineBetween(22, 50, 46, 53);
+    // Abdomen
     beeG.fillStyle(0xFFCC00);
-    beeG.fillEllipse(16, 22, 26, 22);
+    beeG.fillEllipse(18, 28, 30, 26);
     // Stripes
     beeG.fillStyle(0x1A1A00);
-    beeG.fillRect(6, 16, 20, 4);
-    beeG.fillRect(6, 24, 20, 4);
-    beeG.fillRect(6, 32, 16, 3);
-    // Fuzz effect
-    beeG.fillStyle(0xFFDD44, 0.4);
-    beeG.fillEllipse(16, 20, 20, 14);
+    beeG.fillRect(6, 20, 24, 5);
+    beeG.fillRect(6, 30, 24, 5);
+    beeG.fillRect(8, 40, 18, 4);
+    // Fuzz
+    beeG.fillStyle(0xFFDD44, 0.35);
+    beeG.fillEllipse(18, 26, 24, 18);
     // Thorax
     beeG.fillStyle(0xDDAA00);
-    beeG.fillCircle(30, 22, 8);
+    beeG.fillCircle(36, 28, 10);
     // Head
     beeG.fillStyle(0xCC9900);
-    beeG.fillCircle(38, 22, 6);
-    // Wings (iridescent)
-    beeG.fillStyle(0xFFFFFF, 0.5);
-    beeG.fillEllipse(28, 6, 20, 12);
-    beeG.fillEllipse(28, 38, 20, 12);
-    // Wing detail
-    beeG.lineStyle(0.5, 0xCCBB88, 0.3);
-    beeG.lineBetween(20, 6, 36, 4);
-    beeG.lineBetween(20, 38, 36, 40);
+    beeG.fillCircle(48, 28, 8);
+    // Eyes
+    beeG.fillStyle(0x000000);
+    beeG.fillCircle(52, 25, 3.5);
+    beeG.fillCircle(52, 31, 3.5);
+    beeG.fillStyle(0x333300);
+    beeG.fillCircle(53, 24, 1.5);
+    beeG.fillCircle(53, 30, 1.5);
+    // Antennae
+    beeG.lineStyle(1.5, 0x886600);
+    beeG.lineBetween(52, 20, 58, 12);
+    beeG.fillCircle(58, 12, 2);
+    beeG.lineBetween(52, 20, 56, 14);
+    beeG.fillCircle(56, 14, 1.5);
     // Stinger
     beeG.fillStyle(0x1A1A00);
-    beeG.fillTriangle(3, 22, 0, 19, 0, 25);
-    // Eyes (compound)
-    beeG.fillStyle(0x000000);
-    beeG.fillCircle(41, 20, 2.5);
-    beeG.fillCircle(41, 24, 2.5);
-    // Antennae
-    beeG.lineStyle(1, 0x886600);
-    beeG.lineBetween(42, 17, 46, 10);
-    beeG.lineBetween(42, 17, 48, 12);
-    beeG.generateTexture('bug_bee', 48, 44);
+    beeG.fillTriangle(3, 28, 0, 24, 0, 32);
+    beeG.generateTexture('bug_bee', 64, 56);
     beeG.destroy();
 
-    // --- Spider (boss, detailed, 80x80) ---
+    // --- Spider (boss, upgraded, 96x96) ---
     const spiderG = this.add.graphics();
-    // Abdomen (large, round)
+    spiderG.fillStyle(0x000000, 0.15);
+    spiderG.fillEllipse(48, 86, 60, 10);
+    // Abdomen
     spiderG.fillStyle(0x1A1A1A);
-    spiderG.fillCircle(30, 44, 26);
-    // Abdomen pattern (hourglass)
-    spiderG.fillStyle(0xCC0000);
-    spiderG.fillTriangle(30, 28, 22, 44, 38, 44);
-    spiderG.fillTriangle(30, 60, 22, 44, 38, 44);
-    // Abdomen shine
-    spiderG.fillStyle(0x2A2A2A, 0.5);
-    spiderG.fillEllipse(24, 38, 14, 10);
+    spiderG.fillCircle(36, 54, 30);
+    // Hourglass pattern
+    spiderG.fillStyle(0xDD0000);
+    spiderG.fillTriangle(36, 34, 26, 54, 46, 54);
+    spiderG.fillTriangle(36, 74, 26, 54, 46, 54);
+    // Abdomen texture
+    spiderG.fillStyle(0x2A2A2A, 0.4);
+    spiderG.fillEllipse(28, 46, 16, 12);
+    spiderG.fillStyle(0x333333, 0.3);
+    spiderG.fillEllipse(44, 62, 12, 10);
     // Cephalothorax
     spiderG.fillStyle(0x222222);
-    spiderG.fillEllipse(50, 40, 22, 18);
-    // Legs (8 legs, jointed, spread wide)
-    spiderG.lineStyle(3, 0x111111);
-    // Left legs
-    spiderG.lineBetween(42, 34, 32, 16); spiderG.lineBetween(32, 16, 20, 4);
-    spiderG.lineBetween(40, 38, 28, 22); spiderG.lineBetween(28, 22, 14, 10);
-    spiderG.lineBetween(40, 46, 28, 56); spiderG.lineBetween(28, 56, 14, 68);
-    spiderG.lineBetween(42, 50, 32, 62); spiderG.lineBetween(32, 62, 20, 76);
-    // Right legs
-    spiderG.lineBetween(58, 34, 68, 16); spiderG.lineBetween(68, 16, 80, 4);
-    spiderG.lineBetween(60, 38, 72, 22); spiderG.lineBetween(72, 22, 80, 10);
-    spiderG.lineBetween(60, 46, 72, 56); spiderG.lineBetween(72, 56, 80, 68);
-    spiderG.lineBetween(58, 50, 68, 62); spiderG.lineBetween(68, 62, 80, 76);
-    // Fangs (chelicerae)
-    spiderG.fillStyle(0x440000);
-    spiderG.fillTriangle(56, 32, 62, 28, 60, 36);
-    spiderG.fillTriangle(56, 48, 62, 44, 60, 52);
-    // Eyes (8 eyes in 2 rows)
+    spiderG.fillEllipse(62, 50, 26, 22);
+    // Legs (8, thick)
+    spiderG.lineStyle(4, 0x111111);
+    spiderG.lineBetween(50, 42, 38, 20); spiderG.lineBetween(38, 20, 24, 4);
+    spiderG.lineBetween(48, 46, 34, 28); spiderG.lineBetween(34, 28, 16, 12);
+    spiderG.lineBetween(48, 58, 34, 68); spiderG.lineBetween(34, 68, 16, 82);
+    spiderG.lineBetween(50, 62, 38, 76); spiderG.lineBetween(38, 76, 24, 92);
+    spiderG.lineBetween(72, 42, 82, 20); spiderG.lineBetween(82, 20, 94, 4);
+    spiderG.lineBetween(74, 46, 86, 28); spiderG.lineBetween(86, 28, 96, 12);
+    spiderG.lineBetween(74, 58, 86, 68); spiderG.lineBetween(86, 68, 96, 82);
+    spiderG.lineBetween(72, 62, 82, 76); spiderG.lineBetween(82, 76, 94, 92);
+    // Leg joints
+    spiderG.fillStyle(0x1A1A1A);
+    [{ x: 38, y: 20 }, { x: 34, y: 28 }, { x: 34, y: 68 }, { x: 38, y: 76 },
+     { x: 82, y: 20 }, { x: 86, y: 28 }, { x: 86, y: 68 }, { x: 82, y: 76 }]
+      .forEach(j => spiderG.fillCircle(j.x, j.y, 3));
+    // Fangs
+    spiderG.fillStyle(0x660000);
+    spiderG.fillTriangle(70, 40, 78, 34, 76, 44);
+    spiderG.fillTriangle(70, 60, 78, 56, 76, 66);
+    // Eyes (8, menacing)
     spiderG.fillStyle(0xFF0000);
-    spiderG.fillCircle(52, 36, 3);
-    spiderG.fillCircle(52, 44, 3);
+    spiderG.fillCircle(64, 44, 4);
+    spiderG.fillCircle(64, 56, 4);
     spiderG.fillStyle(0xFF3333);
-    spiderG.fillCircle(56, 33, 2);
-    spiderG.fillCircle(56, 47, 2);
+    spiderG.fillCircle(68, 41, 3);
+    spiderG.fillCircle(68, 59, 3);
     spiderG.fillStyle(0xCC0000);
-    spiderG.fillCircle(48, 34, 2);
-    spiderG.fillCircle(48, 46, 2);
-    spiderG.fillCircle(54, 38, 1.5);
-    spiderG.fillCircle(54, 42, 1.5);
-    // Pedipalps
-    spiderG.lineStyle(2, 0x1A1A1A);
-    spiderG.lineBetween(58, 36, 64, 32);
-    spiderG.lineBetween(58, 44, 64, 48);
-    spiderG.generateTexture('bug_spider', 80, 80);
+    spiderG.fillCircle(60, 42, 2.5);
+    spiderG.fillCircle(60, 58, 2.5);
+    spiderG.fillCircle(66, 48, 2);
+    spiderG.fillCircle(66, 52, 2);
+    // Eye shine
+    spiderG.fillStyle(0xFFFFFF, 0.3);
+    spiderG.fillCircle(63, 43, 1.5);
+    spiderG.fillCircle(63, 55, 1.5);
+    spiderG.generateTexture('bug_spider', 96, 96);
     spiderG.destroy();
 
     // --- Stone Wall fortification ---
