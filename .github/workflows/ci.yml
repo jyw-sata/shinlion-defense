@@ -12,8 +12,3 @@ on:
 jobs:
   lint:
     uses: jyw-sata/devops/.github/workflows/lint.yml@main
-
-  codeql:
-    uses: jyw-sata/devops/.github/workflows/codeql.yml@main
-    with:
-      language: javascript
